@@ -16,6 +16,9 @@
 	"entrypoints": {
 		"main": [
 			"net.fayber.graves.GravesMod"
+		],
+		"modmenu": [
+			"net.fayber.graves.GravesModMenu"
 		]
 	},
 	"depends": {

@@ -19,8 +19,9 @@ Inspired by the classic Vanilla Tweaks Graves datapack.
 ## Configuration
 
 All options live in `config/graves.json` next to the other mod configs. Change
-the file and restart, or set them live with `/graves config set`. Defaults
-mirror the original datapack:
+the file and restart, set them live with `/graves config set`, or edit them from
+the Mods screen via ModMenu in singleplayer. Defaults mirror the original
+datapack:
 
 - `allow_robbing` (false): whether players other than the owner may open a grave.
 - `pick_up_xp` (true): capture the death XP into the grave. When false the XP
@@ -36,6 +37,8 @@ mirror the original datapack:
 
 - Runs on the server. The integrated server in singleplayer also works.
 - Clients do not need the mod installed.
+- In singleplayer, the config can also be edited from the Mods screen (ModMenu
+  is optional; install it to get the config button).
 - A grave spawns only when keepInventory is off and you died with items or XP.
 - Opening a grave is all-at-once, like the datapack: every item is handed back
   to its original slot (or the first free slot), anything that does not fit

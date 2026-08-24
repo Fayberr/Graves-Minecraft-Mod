@@ -11,8 +11,8 @@ base {
 }
 
 repositories {
-	// Add repositories for extra mods/deps here (e.g. Terraformers for ModMenu):
-	// maven { name = 'Terraformers'; url = 'https://maven.terraformersmc.com/' }
+	// Terraformers maven for ModMenu
+	maven { name = 'Terraformers'; url = 'https://maven.terraformersmc.com/' }
 }
 
 dependencies {
@@ -23,8 +23,7 @@ dependencies {
 	implementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 
 	// Extra mods as compileOnly (no remap needed on 26.1+):
-	// modCompileOnly "com.terraformersmc:modmenu:..."
-	// (note: use `compileOnly` / `implementation` instead of mod* variants on 26.1+)
+	compileOnly "com.terraformersmc:modmenu:18.0.0"
 }
 
 processResources {
