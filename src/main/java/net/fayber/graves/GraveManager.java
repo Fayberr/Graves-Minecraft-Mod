@@ -8,14 +8,12 @@ import com.google.gson.JsonParser;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.HolderLookup;
-import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.TagKey;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.damagesource.DamageSource;
@@ -25,9 +23,6 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.ItemEnchantments;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.Heightmap;
@@ -106,10 +101,14 @@ public final class GraveManager {
                 inv.setItem(slot, ItemStack.EMPTY);
             }
         }
-        int xp = player.totalExperience;
-        if (xp > 0) {
-            player.setExperienceLevels(0);
-            player.setExperiencePoints(0);
+        int xp = 0;
+        if (GraveConfig.get().pick_up_xp) {
+            xp = player.totalExperience;
+            if (xp > 0) {
+                player.setExperienceLevels(0);
+                player.setExperiencePoints(0);
+                player.totalExperience = 0;
+            }
         }
         if (items.isEmpty() && xp <= 0) {
             return true; // Nothing worth a grave.
@@ -174,46 +173,26 @@ public final class GraveManager {
             return;
         }
 
-        Inventory inv = player.getInventory();
-        List<Integer> consumed = new ArrayList<>();
-        int bindingLeft = 0;
+        // All-at-once, like the datapack: every item is handed back to the player
+        // (preferred slot, then any free slot), and anything that doesn't fit is
+        // dropped on the ground. Nothing is left in the grave.
         for (int i = 0; i < grave.items.size(); i++) {
             ItemStack stack = grave.items.get(i);
-            if (stack.isEmpty()) {
-                consumed.add(i);
-                continue;
+            if (!stack.isEmpty()) {
+                insertIntoPlayer(player, grave.slots.get(i), stack);
             }
-            if (isBindingCurse(stack) && !isOwner && !bypass) {
-                // Curse of Binding items can only be reclaimed by their owner.
-                bindingLeft++;
-                continue;
-            }
-            insertIntoPlayer(player, grave.slots.get(i), stack);
-            consumed.add(i);
         }
-        grave.removeIndices(consumed);
+        grave.items.clear();
+        grave.slots.clear();
 
-        if (bindingLeft > 0) {
-            message(player, bindingLeft + " Curse of Binding item" + (bindingLeft == 1 ? "" : "s")
-                    + " can only be taken by " + grave.ownerName + ".");
+        if (GraveConfig.get().pick_up_xp && grave.xpPoints > 0) {
+            player.giveExperiencePoints(grave.xpPoints);
+            message(player, "Recovered " + grave.xpPoints + " experience points.");
+            grave.xpPoints = 0;
         }
 
-        if (grave.isEmpty()) {
-            if (GraveConfig.get().pick_up_xp && grave.xpPoints > 0) {
-                // The robbing gate above already ran: anyone who got this far is
-                // allowed to open the grave (owner, key holder, or a robber when
-                // robbing is enabled), so they absorb the XP directly.
-                player.giveExperiencePoints(grave.xpPoints);
-                message(player, "Recovered " + grave.xpPoints + " experience points.");
-                grave.xpPoints = 0;
-            }
-            destroyGrave(grave, false, true);
-            message(player, "Grave fully recovered.");
-        } else {
-            message(player, grave.items.size() + " item stack" + (grave.items.size() == 1 ? "" : "s")
-                    + " remain in the grave.");
-        }
-        saveToDisk();
+        destroyGrave(grave, false, false);
+        message(player, "Grave fully recovered.");
     }
 
     /** Preferred slot first, then any free slot, otherwise drop at the feet. */
@@ -230,16 +209,6 @@ public final class GraveManager {
             }
         }
         player.drop(stack, false);
-    }
-
-    private static boolean isBindingCurse(ItemStack stack) {
-        ItemEnchantments enchants = stack.getOrDefault(DataComponents.ENCHANTMENTS, ItemEnchantments.EMPTY);
-        for (Holder<Enchantment> holder : enchants.keySet()) {
-            if (holder.is(Enchantments.BINDING_CURSE)) {
-                return true;
-            }
-        }
-        return false;
     }
 
     /** True while the player holds a Grave Key anywhere in their hands. */
