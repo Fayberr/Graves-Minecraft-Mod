@@ -13,6 +13,8 @@ base {
 repositories {
 	// Terraformers maven for ModMenu
 	maven { name = 'Terraformers'; url = 'https://maven.terraformersmc.com/' }
+	// Shedaniel maven for Cloth Config
+	maven { name = 'Shedaniel'; url = 'https://maven.shedaniel.me/' }
 }
 
 dependencies {
@@ -24,6 +26,7 @@ dependencies {
 
 	// Extra mods as compileOnly (no remap needed on 26.1+):
 	compileOnly "com.terraformersmc:modmenu:18.0.0"
+	compileOnly "me.shedaniel.cloth:cloth-config-fabric:26.1.154"
 }
 
 processResources {
