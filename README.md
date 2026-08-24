@@ -37,8 +37,10 @@ datapack:
 
 - Runs on the server. The integrated server in singleplayer also works.
 - Clients do not need the mod installed.
-- In singleplayer, the config can also be edited from the Mods screen (ModMenu
-  is optional; install it to get the config button).
+- In singleplayer, the config can also be edited from the Mods screen. Mod Menu
+  and Cloth Config are optional and only needed for the config GUI, never for the
+  mod itself; with Cloth Config installed the GUI is the standard Cloth Config
+  screen.
 - A grave spawns only when keepInventory is off and you died with items or XP.
 - Opening a grave is all-at-once, like the datapack: every item is handed back
   to its original slot (or the first free slot), anything that does not fit
@@ -53,6 +55,7 @@ datapack:
 - Fabric Loader 0.19.3 or newer for Minecraft 26.1.2.
 - Fabric API for 26.1.2.
 - Java 25.
+- Optional: Mod Menu and Cloth Config (for the in-game GUI).
 
 ## Building
 
