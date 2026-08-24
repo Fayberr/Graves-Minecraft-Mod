@@ -200,12 +200,11 @@ public final class GraveManager {
 
         if (grave.isEmpty()) {
             if (GraveConfig.get().pick_up_xp && grave.xpPoints > 0) {
-                if (isOwner || bypass) {
-                    player.giveExperiencePoints(grave.xpPoints);
-                    message(player, "Recovered " + grave.xpPoints + " experience points.");
-                } else {
-                    spillXp(level, grave);
-                }
+                // The robbing gate above already ran: anyone who got this far is
+                // allowed to open the grave (owner, key holder, or a robber when
+                // robbing is enabled), so they absorb the XP directly.
+                player.giveExperiencePoints(grave.xpPoints);
+                message(player, "Recovered " + grave.xpPoints + " experience points.");
                 grave.xpPoints = 0;
             }
             destroyGrave(grave, false, true);
