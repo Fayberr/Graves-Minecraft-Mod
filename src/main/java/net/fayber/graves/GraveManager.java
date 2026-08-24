@@ -118,6 +118,8 @@ public final class GraveManager {
         grave.ownerUuid = player.getUUID();
         grave.ownerName = player.getName().getString();
         grave.xpPoints = xp;
+        grave.items.addAll(items);
+        grave.slots.addAll(slots);
         grave.deathGameTime = level.getGameTime();
         grave.dimension = level.dimension();
 

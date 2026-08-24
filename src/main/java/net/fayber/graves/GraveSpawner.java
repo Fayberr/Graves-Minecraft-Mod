@@ -1,5 +1,6 @@
 package net.fayber.graves;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -7,6 +8,10 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.NbtOps;
+import net.minecraft.nbt.Tag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
@@ -98,7 +103,10 @@ public final class GraveSpawner {
         textNbt.putString("billboard", "center");
         textNbt.putFloat("view_range", 0.0625f);
         textNbt.putString("alignment", "center");
-        textNbt.putString("text", "{\"text\":\"" + escapeJson(grave.ownerName) + "\",\"color\":\"yellow\"}");
+        Component label = Component.literal(grave.ownerName).withStyle(ChatFormatting.YELLOW);
+        ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE, label)
+                .result()
+                .ifPresent(tag -> textNbt.put("text", tag));
 
         // --- interaction: invisible clickable hitbox riding the display ---
         CompoundTag interactNbt = baseNbt(EntityType.INTERACTION, interactionId, cx, cy, cz);
@@ -131,9 +139,9 @@ public final class GraveSpawner {
             text.addTag(ENTITY_TAG_NON_REPELLING);
         }
 
-        grave.displayUuid = displayId;
-        grave.nameTagUuid = textId;
-        grave.interactionUuid = interactionId;
+        grave.displayUuid = display != null ? display.getUUID() : displayId;
+        grave.nameTagUuid = text != null ? text.getUUID() : textId;
+        grave.interactionUuid = interaction != null ? interaction.getUUID() : interactionId;
     }
 
     private static CompoundTag baseNbt(EntityType<?> type, UUID uuid, double x, double y, double z) {
@@ -178,17 +186,6 @@ public final class GraveSpawner {
         out.putString("id", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         out.putInt("count", stack.getCount());
         return out;
-    }
-
-    private static String escapeJson(String s) {
-        StringBuilder sb = new StringBuilder();
-        for (char c : s.toCharArray()) {
-            if (c == '\\') sb.append("\\\\");
-            else if (c == '"') sb.append("\\\"");
-            else if (c < 0x20) sb.append(' ');
-            else sb.append(c);
-        }
-        return sb.toString();
     }
 
     // ------------------------------------------------------------------
