@@ -1,7 +1,9 @@
 package net.fayber.graves;
 
+import com.mojang.authlib.GameProfile;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -21,6 +23,7 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -76,7 +79,7 @@ public final class GraveSpawner {
      * entity UUIDs on the grave object. The interaction entity rides the
      * item display so its hitbox follows any movement.
      */
-    public static void spawnEntities(Level level, BlockPos pos, Grave grave) {
+    public static void spawnEntities(Level level, BlockPos pos, Grave grave, GameProfile profile) {
         double cx = pos.getX() + 0.5;
         double cy = pos.getY();
         double cz = pos.getZ() + 0.5;
@@ -96,7 +99,7 @@ public final class GraveSpawner {
         displayNbt.putString("item_display", "head");
         displayNbt.putInt("teleport_duration", 1);
         displayNbt.putInt("PosRotInterpolationDuration", 1);
-        displayNbt.put("item", itemStackNbt(iconItem(grave)));
+        displayNbt.put("item", itemStackNbt(level, iconItem(profile)));
 
         // --- text display: owner name label ---
         CompoundTag textNbt = baseNbt(EntityType.TEXT_DISPLAY, textId, cx, cy + 0.75, cz);
@@ -173,19 +176,19 @@ public final class GraveSpawner {
         return list;
     }
 
-    private static ItemStack iconItem(Grave grave) {
-        for (ItemStack stack : grave.items) {
-            if (!stack.isEmpty()) return stack;
+    private static ItemStack iconItem(GameProfile profile) {
+        ItemStack head = new ItemStack(Items.PLAYER_HEAD);
+        if (profile != null) {
+            head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         }
-        return new ItemStack(Items.PLAYER_HEAD);
+        return head;
     }
 
-    /** Serializes an ItemStack into the compact entity-item NBT format. */
-    private static CompoundTag itemStackNbt(ItemStack stack) {
-        CompoundTag out = new CompoundTag();
-        out.putString("id", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
-        out.putInt("count", stack.getCount());
-        return out;
+    /** Serializes a full ItemStack (including components like the head profile). */
+    private static CompoundTag itemStackNbt(Level level, ItemStack stack) {
+        var ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
+        Tag tag = ItemStack.CODEC.encodeStart(ops, stack).result().orElse(null);
+        return tag instanceof CompoundTag ct ? ct : new CompoundTag();
     }
 
     // ------------------------------------------------------------------

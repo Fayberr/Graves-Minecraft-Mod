@@ -103,7 +103,7 @@ public final class GraveManager {
         }
         int xp = 0;
         if (GraveConfig.get().pick_up_xp) {
-            xp = player.totalExperience;
+            xp = totalExperiencePoints(player);
             if (xp > 0) {
                 player.setExperienceLevels(0);
                 player.setExperiencePoints(0);
@@ -130,7 +130,7 @@ public final class GraveManager {
         grave.z = result.pos().getZ();
         grave.platformPlaced = result.platform();
 
-        GraveSpawner.spawnEntities(level, result.pos(), grave);
+        GraveSpawner.spawnEntities(level, result.pos(), grave, player.getGameProfile());
         register(grave);
         saveToDisk();
 
@@ -142,6 +142,31 @@ public final class GraveManager {
     private static boolean keepInventory(ServerLevel level) {
         return Boolean.TRUE.equals(level.getGameRules()
                 .get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY));
+    }
+
+    /**
+     * Total XP points the player currently has, derived from level + progress.
+     * The {@code totalExperience} field is NOT maintained by every XP source
+     * (e.g. {@code /xp ... levels} only bumps {@code experienceLevel}), so it
+     * reads 0 for players who gained levels through commands. This mirrors the
+     * vanilla {@code getXpNeededForNextLevel()} curve so the round-trip through
+     * {@code giveExperiencePoints} is lossless.
+     */
+    private static int totalExperiencePoints(Player player) {
+        int level = player.experienceLevel;
+        int total = 0;
+        for (int i = 0; i < level; i++) {
+            total += xpNeededForLevel(i);
+        }
+        total += Math.round(player.experienceProgress * xpNeededForLevel(level));
+        return total;
+    }
+
+    /** Vanilla XP curve for 26.1: 2*level+7, then 5*level-38, then 9*level-158. */
+    private static int xpNeededForLevel(int level) {
+        if (level >= 30) return 9 * level - 158;
+        if (level >= 15) return 5 * level - 38;
+        return 2 * level + 7;
     }
 
     // ------------------------------------------------------------------
