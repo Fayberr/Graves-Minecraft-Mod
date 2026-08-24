@@ -12,6 +12,7 @@
 		"sources": "https://github.com/Fayberr/Graves-Minecraft-Mod"
 	},
 	"license": "GPL-3.0-or-later",
+	"icon": "assets/graves/icon.png",
 	"environment": "*",
 	"entrypoints": {
 		"main": [
