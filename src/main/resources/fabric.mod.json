@@ -1,0 +1,27 @@
+{
+	"schemaVersion": 1,
+	"id": "graves",
+	"version": "${version}",
+	"name": "Graves",
+	"description": "Never lose your items on death. A grave spawns where you died, holding your inventory and XP. Inspired by the classic Vanilla Tweaks Graves datapack.",
+	"authors": [
+		"Fayber"
+	],
+	"contact": {
+		"homepage": "https://github.com/Fayberr/Graves-Minecraft-Mod",
+		"sources": "https://github.com/Fayberr/Graves-Minecraft-Mod"
+	},
+	"license": "GPL-3.0-or-later",
+	"environment": "*",
+	"entrypoints": {
+		"main": [
+			"net.fayber.graves.GravesMod"
+		]
+	},
+	"depends": {
+		"fabricloader": ">=${loader_version}",
+		"minecraft": "~${minecraft_version}",
+		"java": ">=25",
+		"fabric-api": "*"
+	}
+}
