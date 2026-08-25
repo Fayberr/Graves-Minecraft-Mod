@@ -50,14 +50,41 @@ public final class GraveCommands {
             source.sendSuccess(() -> Component.literal("[Graves] You have no active graves."), false);
             return 0;
         }
+        StringBuilder sb = new StringBuilder("[Graves] Grave list (")
+                .append(graves.size()).append("):");
         for (Grave grave : graves) {
             long age = ageSeconds(source, grave);
-            source.sendSuccess(() -> Component.literal("[Graves] " + grave.dimensionId()
-                    + " at " + grave.x + " " + grave.y + " " + grave.z
-                    + ", owner " + grave.ownerName + ", " + grave.items.size() + " stack(s)"
-                    + (age >= 0 ? ", age " + age + "s" : "")), false);
+            sb.append('\n').append(dimensionName(grave))
+                    .append(" at ").append(grave.x).append(' ')
+                    .append(grave.y).append(' ').append(grave.z);
+            if (age >= 0) {
+                sb.append(" (").append(formatAge(age)).append(')');
+            }
         }
+        source.sendSuccess(() -> Component.literal(sb.toString()), false);
         return graves.size();
+    }
+
+    /** Human-friendly dimension name: minecraft:overworld -> Overworld, minecraft:the_nether -> The Nether. */
+    private static String dimensionName(Grave grave) {
+        String path = grave.dimensionId().getPath();
+        StringBuilder name = new StringBuilder();
+        for (String word : path.split("_")) {
+            if (word.isEmpty()) continue;
+            if (name.length() > 0) name.append(' ');
+            name.append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return name.length() > 0 ? name.toString() : path;
+    }
+
+    /** Seconds since the grave was created, as a short relative phrase ("5 minutes ago"). */
+    private static String formatAge(long seconds) {
+        if (seconds < 5) return "just now";
+        if (seconds < 60) return seconds + " seconds ago";
+        if (seconds < 3600) return (seconds / 60) + " minutes ago";
+        if (seconds < 86400) return (seconds / 3600) + " hours ago";
+        if (seconds < 604800) return (seconds / 86400) + " days ago";
+        return (seconds / 604800) + " weeks ago";
     }
 
     private static int locate(CommandSourceStack source, boolean anyOwner) {
