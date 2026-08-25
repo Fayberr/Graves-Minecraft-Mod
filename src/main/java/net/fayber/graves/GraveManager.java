@@ -214,12 +214,11 @@ public final class GraveManager {
 
         if (GraveConfig.get().pick_up_xp && grave.xpPoints > 0) {
             player.giveExperiencePoints(grave.xpPoints);
-            message(player, "Recovered " + grave.xpPoints + " experience points.");
             grave.xpPoints = 0;
         }
 
         destroyGrave(grave, false, false);
-        message(player, "Grave fully recovered.");
+        message(player, "Grave picked up.");
     }
 
     /** Preferred slot first, then any free slot, otherwise drop at the feet. */
