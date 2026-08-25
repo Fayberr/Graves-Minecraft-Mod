@@ -134,8 +134,7 @@ public final class GraveManager {
         register(grave);
         saveToDisk();
 
-        message(player, "Your grave was placed at " + grave.x + " " + grave.y + " " + grave.z
-                + (xp > 0 ? " (it holds your XP)" : "") + ".");
+        message(player, "Your grave was placed at " + grave.x + " " + grave.y + " " + grave.z + ".");
         return true;
     }
 
