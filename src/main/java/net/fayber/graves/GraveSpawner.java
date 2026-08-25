@@ -1,9 +1,7 @@
 package net.fayber.graves;
 
-import com.mojang.authlib.GameProfile;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.component.DataComponents;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
@@ -23,7 +21,6 @@ import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.component.ResolvableProfile;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -79,7 +76,7 @@ public final class GraveSpawner {
      * entity UUIDs on the grave object. The interaction entity rides the
      * item display so its hitbox follows any movement.
      */
-    public static void spawnEntities(Level level, BlockPos pos, Grave grave, GameProfile profile) {
+    public static void spawnEntities(Level level, BlockPos pos, Grave grave) {
         double cx = pos.getX() + 0.5;
         double cy = pos.getY();
         double cz = pos.getZ() + 0.5;
@@ -99,7 +96,7 @@ public final class GraveSpawner {
         displayNbt.putString("item_display", "head");
         displayNbt.putInt("teleport_duration", 1);
         displayNbt.putInt("PosRotInterpolationDuration", 1);
-        displayNbt.put("item", itemStackNbt(level, iconItem(profile)));
+        displayNbt.put("item", itemStackNbt(level, iconItem()));
 
         // --- text display: owner name label ---
         CompoundTag textNbt = baseNbt(EntityType.TEXT_DISPLAY, textId, cx, cy + 0.75, cz);
@@ -176,12 +173,9 @@ public final class GraveSpawner {
         return list;
     }
 
-    private static ItemStack iconItem(GameProfile profile) {
-        ItemStack head = new ItemStack(Items.PLAYER_HEAD);
-        if (profile != null) {
-            head.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
-        }
-        return head;
+    /** The datapack's grave model: a stone brick wall rendered as a headstone. */
+    private static ItemStack iconItem() {
+        return new ItemStack(Items.STONE_BRICK_WALL);
     }
 
     /** Serializes a full ItemStack (including components like the head profile). */

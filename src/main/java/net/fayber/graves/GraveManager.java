@@ -130,7 +130,7 @@ public final class GraveManager {
         grave.z = result.pos().getZ();
         grave.platformPlaced = result.platform();
 
-        GraveSpawner.spawnEntities(level, result.pos(), grave, player.getGameProfile());
+        GraveSpawner.spawnEntities(level, result.pos(), grave);
         register(grave);
         saveToDisk();
 
