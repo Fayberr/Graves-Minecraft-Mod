@@ -86,7 +86,7 @@ public final class GraveSpawner {
         UUID interactionId = UUID.randomUUID();
 
         // --- item display: floating icon above the grave ---
-        CompoundTag displayNbt = baseNbt(EntityType.ITEM_DISPLAY, displayId, cx, cy, cz);
+        CompoundTag displayNbt = baseNbt(entityType("item_display"), displayId, cx, cy, cz);
         CompoundTag transform = new CompoundTag();
         transform.put("translation", floatList(0.0f, 0.3125f, 0.0f));
         transform.put("scale", floatList(0.625f, 0.625f, 0.625f));
@@ -99,7 +99,7 @@ public final class GraveSpawner {
         displayNbt.put("item", itemStackNbt(level, iconItem()));
 
         // --- text display: owner name label ---
-        CompoundTag textNbt = baseNbt(EntityType.TEXT_DISPLAY, textId, cx, cy + 0.75, cz);
+        CompoundTag textNbt = baseNbt(entityType("text_display"), textId, cx, cy + 0.75, cz);
         textNbt.putString("billboard", "center");
         textNbt.putFloat("view_range", 0.0625f);
         textNbt.putString("alignment", "center");
@@ -109,16 +109,16 @@ public final class GraveSpawner {
                 .ifPresent(tag -> textNbt.put("text", tag));
 
         // --- interaction: invisible clickable hitbox riding the display ---
-        CompoundTag interactNbt = baseNbt(EntityType.INTERACTION, interactionId, cx, cy, cz);
+        CompoundTag interactNbt = baseNbt(entityType("interaction"), interactionId, cx, cy, cz);
         interactNbt.putFloat("width", 0.75f);
         interactNbt.putFloat("height", 1.8f);
         interactNbt.putBoolean("attack", true);
         interactNbt.putBoolean("interaction", true);
         interactNbt.putBoolean("response", true);
 
-        Entity display = loadEntity(level, EntityType.ITEM_DISPLAY, displayNbt);
-        Entity text = loadEntity(level, EntityType.TEXT_DISPLAY, textNbt);
-        Entity interaction = loadEntity(level, EntityType.INTERACTION, interactNbt);
+        Entity display = loadEntity(level, entityType("item_display"), displayNbt);
+        Entity text = loadEntity(level, entityType("text_display"), textNbt);
+        Entity interaction = loadEntity(level, entityType("interaction"), interactNbt);
 
         if (display != null) {
             level.addFreshEntity(display);
@@ -159,6 +159,11 @@ public final class GraveSpawner {
     private static Entity loadEntity(Level level, EntityType<?> type, CompoundTag nbt) {
         ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), nbt);
         return EntityType.create(type, input, level, EntitySpawnReason.LOAD).orElse(null);
+    }
+
+    /** 26.2 removed the EntityType.*_DISPLAY/INTERACTION constants; look them up. */
+    private static EntityType<?> entityType(String id) {
+        return BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", id));
     }
 
     private static ListTag doubleList(double... values) {

@@ -51,7 +51,7 @@ public class GraveConfigScreen extends Screen {
         });
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.back"), button ->
-                this.minecraft.setScreen(this.parent))
+                this.minecraft.setScreenAndShow(this.parent))
                 .bounds(centerX - 100, this.height - 30, 200, 20)
                 .build());
     }
@@ -95,6 +95,6 @@ public class GraveConfigScreen extends Screen {
 
     @Override
     public void onClose() {
-        this.minecraft.setScreen(this.parent);
+        this.minecraft.setScreenAndShow(this.parent);
     }
 }
