@@ -537,6 +537,11 @@ public final class GraveManager {
             }
 
             @Override
+            public int getMinY() {
+                return level.getMinY();
+            }
+
+            @Override
             public List<Entity> getRepellingEntities(AABB box) {
                 return level.getEntitiesOfClass(Entity.class, box,
                         e -> net.minecraft.core.registries.BuiltInRegistries.ENTITY_TYPE
