@@ -7,6 +7,8 @@ import net.fabricmc.loader.api.FabricLoader;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Mod config, stored as {@code config/graves.json}.
@@ -32,6 +34,14 @@ public final class GraveConfig {
     public boolean compatibility_mode = false;
     /** Seconds until graves despawn and spill their contents. 0 disables despawning. */
     public int despawn_seconds = 0;
+    /** Whether the deepslate_grave look is in the random pool. */
+    public boolean grave_look_deepslate_grave = true;
+    /** Whether the wooden_cross look is in the random pool. */
+    public boolean grave_look_wooden_cross = true;
+    /** Whether the deepslate_tombstone look is in the random pool. */
+    public boolean grave_look_deepslate_tombstone = true;
+    /** Whether the soulgrave look is in the random pool. */
+    public boolean grave_look_soulgrave = true;
 
     /** True if the config file contained an explicit allow_locating value. */
     private transient boolean userSetAllowLocating = false;
@@ -55,6 +65,10 @@ public final class GraveConfig {
                     }
                     if (raw.compatibility_mode != null) cfg.compatibility_mode = raw.compatibility_mode;
                     if (raw.despawn_seconds != null) cfg.despawn_seconds = raw.despawn_seconds;
+                    if (raw.grave_look_deepslate_grave != null) cfg.grave_look_deepslate_grave = raw.grave_look_deepslate_grave;
+                    if (raw.grave_look_wooden_cross != null) cfg.grave_look_wooden_cross = raw.grave_look_wooden_cross;
+                    if (raw.grave_look_deepslate_tombstone != null) cfg.grave_look_deepslate_tombstone = raw.grave_look_deepslate_tombstone;
+                    if (raw.grave_look_soulgrave != null) cfg.grave_look_soulgrave = raw.grave_look_soulgrave;
                 }
             } catch (Exception e) {
                 GravesMod.LOGGER.error("[Graves] Failed to read config, using defaults", e);
@@ -82,6 +96,10 @@ public final class GraveConfig {
         raw.allow_locating = INSTANCE.allow_locating;
         raw.compatibility_mode = INSTANCE.compatibility_mode;
         raw.despawn_seconds = INSTANCE.despawn_seconds;
+        raw.grave_look_deepslate_grave = INSTANCE.grave_look_deepslate_grave;
+        raw.grave_look_wooden_cross = INSTANCE.grave_look_wooden_cross;
+        raw.grave_look_deepslate_tombstone = INSTANCE.grave_look_deepslate_tombstone;
+        raw.grave_look_soulgrave = INSTANCE.grave_look_soulgrave;
         // Preserve whether the user explicitly pinned allow_locating.
         if (INSTANCE.userSetAllowLocating) {
             raw.user_set_allow_locating = true;
@@ -103,6 +121,10 @@ public final class GraveConfig {
             case "allow_locating" -> { c.allow_locating = parseBool(value); c.userSetAllowLocating = true; }
             case "compatibility_mode" -> c.compatibility_mode = parseBool(value);
             case "despawn_seconds" -> c.despawn_seconds = Integer.parseInt(value);
+            case "grave_look_deepslate_grave" -> c.grave_look_deepslate_grave = parseBool(value);
+            case "grave_look_wooden_cross" -> c.grave_look_wooden_cross = parseBool(value);
+            case "grave_look_deepslate_tombstone" -> c.grave_look_deepslate_tombstone = parseBool(value);
+            case "grave_look_soulgrave" -> c.grave_look_soulgrave = parseBool(value);
             default -> {
                 return false;
             }
@@ -115,13 +137,44 @@ public final class GraveConfig {
         return v.equalsIgnoreCase("true") || v.equals("1") || v.equalsIgnoreCase("yes");
     }
 
+    /** Whether the given look is enabled and should take part in random selection. */
+    public boolean isLookEnabled(GraveLook look) {
+        return switch (look) {
+            case DEEPSLATE_GRAVE -> grave_look_deepslate_grave;
+            case WOODEN_CROSS -> grave_look_wooden_cross;
+            case DEEPSLATE_TOMBSTONE -> grave_look_deepslate_tombstone;
+            case SOULGRAVE -> grave_look_soulgrave;
+        };
+    }
+
+    /**
+     * The enabled looks a death can randomly spawn from. If every look is
+     * disabled this falls back to all four (with a warning) rather than
+     * blocking grave spawning entirely.
+     */
+    public List<GraveLook> enabledLooks() {
+        List<GraveLook> pool = new ArrayList<>();
+        for (GraveLook look : GraveLook.values()) {
+            if (isLookEnabled(look)) pool.add(look);
+        }
+        if (pool.isEmpty()) {
+            GravesMod.LOGGER.warn("[Graves] All grave looks are disabled in config; ignoring that and using all four so graves keep spawning.");
+            return List.of(GraveLook.values());
+        }
+        return pool;
+    }
+
     @Override
     public String toString() {
         return "allow_robbing=" + allow_robbing
                 + ", pick_up_xp=" + pick_up_xp
                 + ", allow_locating=" + allow_locating
                 + ", compatibility_mode=" + compatibility_mode
-                + ", despawn_seconds=" + despawn_seconds;
+                + ", despawn_seconds=" + despawn_seconds
+                + ", grave_look_deepslate_grave=" + grave_look_deepslate_grave
+                + ", grave_look_wooden_cross=" + grave_look_wooden_cross
+                + ", grave_look_deepslate_tombstone=" + grave_look_deepslate_tombstone
+                + ", grave_look_soulgrave=" + grave_look_soulgrave;
     }
 
     /** JSON shape on disk; boxed so missing keys keep their defaults. */
@@ -131,6 +184,10 @@ public final class GraveConfig {
         Boolean allow_locating;
         Boolean compatibility_mode;
         Integer despawn_seconds;
+        Boolean grave_look_deepslate_grave;
+        Boolean grave_look_wooden_cross;
+        Boolean grave_look_deepslate_tombstone;
+        Boolean grave_look_soulgrave;
         @SuppressWarnings("unused")
         Boolean user_set_allow_locating;
     }

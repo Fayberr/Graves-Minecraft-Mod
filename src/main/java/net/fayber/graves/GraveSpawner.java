@@ -1,6 +1,7 @@
 package net.fayber.graves;
 
-import net.minecraft.ChatFormatting;
+import com.mojang.authlib.GameProfile;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
@@ -8,10 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
 import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.NbtOps;
-import net.minecraft.nbt.Tag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.network.chat.ComponentSerialization;
 import net.minecraft.resources.Identifier;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
@@ -19,8 +16,6 @@ import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -36,8 +31,8 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * Spawns the grave entity stack (item_display + interaction + text_display) and
- * implements the Vanilla Tweaks grave placement state machine.
+ * Spawns the grave entity stack (a {@link GraveLook} plus an interaction
+ * hitbox) and implements the Vanilla Tweaks grave placement state machine.
  *
  * Display entities expose no public setters for their render state in 26.1, so
  * all display configuration happens through spawn NBT.
@@ -72,43 +67,24 @@ public final class GraveSpawner {
     // ------------------------------------------------------------------
 
     /**
-     * Spawns the three grave entities around {@code pos} and fills in the
-     * entity UUIDs on the grave object. The interaction entity rides the
-     * item display so its hitbox follows any movement.
+     * Spawns the interaction hitbox plus every display entity of {@code look}
+     * around {@code pos}, and fills in the entity UUIDs on the grave object.
+     *
+     * The hitbox no longer rides a single display entity the way the old
+     * one-piece grave did: a look is a whole pile of pieces sharing one
+     * position, so there is nothing single to ride, and a stationary hitbox
+     * at the grave centre is enough to click. Only the visual pieces move
+     * during the deny-robbing shake (see {@code GraveManager#tickShake}).
      */
-    public static void spawnEntities(Level level, BlockPos pos, Grave grave) {
+    public static void spawnEntities(Level level, BlockPos pos, Grave grave,
+                                     GraveLook look, GameProfile ownerProfile, float facingYaw) {
         double cx = pos.getX() + 0.5;
         double cy = pos.getY();
         double cz = pos.getZ() + 0.5;
 
-        UUID displayId = UUID.randomUUID();
-        UUID textId = UUID.randomUUID();
         UUID interactionId = UUID.randomUUID();
 
-        // --- item display: floating icon above the grave ---
-        CompoundTag displayNbt = baseNbt(EntityType.ITEM_DISPLAY, displayId, cx, cy, cz);
-        CompoundTag transform = new CompoundTag();
-        transform.put("translation", floatList(0.0f, 0.3125f, 0.0f));
-        transform.put("scale", floatList(0.625f, 0.625f, 0.625f));
-        transform.put("left_rotation", floatList(0f, 0f, 0f, 1f));
-        transform.put("right_rotation", floatList(0f, 0f, 0f, 1f));
-        displayNbt.put("transformation", transform);
-        displayNbt.putString("item_display", "head");
-        displayNbt.putInt("teleport_duration", 1);
-        displayNbt.putInt("PosRotInterpolationDuration", 1);
-        displayNbt.put("item", itemStackNbt(level, iconItem()));
-
-        // --- text display: owner name label ---
-        CompoundTag textNbt = baseNbt(EntityType.TEXT_DISPLAY, textId, cx, cy + 0.75, cz);
-        textNbt.putString("billboard", "center");
-        textNbt.putFloat("view_range", 0.0625f);
-        textNbt.putString("alignment", "center");
-        Component label = Component.literal(grave.ownerName).withStyle(ChatFormatting.YELLOW);
-        ComponentSerialization.CODEC.encodeStart(NbtOps.INSTANCE, label)
-                .result()
-                .ifPresent(tag -> textNbt.put("text", tag));
-
-        // --- interaction: invisible clickable hitbox riding the display ---
+        // --- interaction: invisible clickable hitbox ---
         CompoundTag interactNbt = baseNbt(EntityType.INTERACTION, interactionId, cx, cy, cz);
         interactNbt.putFloat("width", 0.75f);
         interactNbt.putFloat("height", 1.8f);
@@ -116,32 +92,21 @@ public final class GraveSpawner {
         interactNbt.putBoolean("interaction", true);
         interactNbt.putBoolean("response", true);
 
-        Entity display = loadEntity(level, EntityType.ITEM_DISPLAY, displayNbt);
-        Entity text = loadEntity(level, EntityType.TEXT_DISPLAY, textNbt);
         Entity interaction = loadEntity(level, EntityType.INTERACTION, interactNbt);
-
-        if (display != null) {
-            level.addFreshEntity(display);
-            if (interaction != null) {
-                interaction.startRiding(display);
-                level.addFreshEntity(interaction);
-                interaction.addTag(ENTITY_TAG_GRAVE);
-                interaction.addTag(ENTITY_TAG_NON_REPELLING);
-            }
-        } else if (interaction != null) {
-            // Fallback: spawn the hitbox on its own so the grave still works.
+        if (interaction != null) {
             level.addFreshEntity(interaction);
             interaction.addTag(ENTITY_TAG_GRAVE);
             interaction.addTag(ENTITY_TAG_NON_REPELLING);
         }
-        if (text != null) {
-            level.addFreshEntity(text);
-            text.addTag(ENTITY_TAG_NON_REPELLING);
-        }
-
-        grave.displayUuid = display != null ? display.getUUID() : displayId;
-        grave.nameTagUuid = text != null ? text.getUUID() : textId;
         grave.interactionUuid = interaction != null ? interaction.getUUID() : interactionId;
+
+        // --- the grave's look: headstone/cross/tomb pieces, mound, head, name ---
+        List<Entity> parts = look.spawn(level, cx, cy, cz, facingYaw, ownerProfile);
+        grave.lookId = look.id();
+        grave.displayEntityUuids.clear();
+        for (Entity part : parts) {
+            grave.displayEntityUuids.add(part.getUUID());
+        }
     }
 
     private static CompoundTag baseNbt(EntityType<?> type, UUID uuid, double x, double y, double z) {
@@ -171,18 +136,6 @@ public final class GraveSpawner {
         ListTag list = new ListTag();
         for (float v : values) list.add(FloatTag.valueOf(v));
         return list;
-    }
-
-    /** The datapack's grave model: a stone brick wall rendered as a headstone. */
-    private static ItemStack iconItem() {
-        return new ItemStack(Items.STONE_BRICK_WALL);
-    }
-
-    /** Serializes a full ItemStack (including components like the head profile). */
-    private static CompoundTag itemStackNbt(Level level, ItemStack stack) {
-        var ops = level.registryAccess().createSerializationContext(NbtOps.INSTANCE);
-        Tag tag = ItemStack.CODEC.encodeStart(ops, stack).result().orElse(null);
-        return tag instanceof CompoundTag ct ? ct : new CompoundTag();
     }
 
     // ------------------------------------------------------------------

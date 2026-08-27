@@ -130,7 +130,12 @@ public final class GraveManager {
         grave.z = result.pos().getZ();
         grave.platformPlaced = result.platform();
 
-        GraveSpawner.spawnEntities(level, result.pos(), grave);
+        List<GraveLook> pool = GraveConfig.get().enabledLooks();
+        GraveLook look = pool.get(level.getRandom().nextInt(pool.size()));
+        // Front of the grave faces back toward where the player died looking,
+        // matching the convention worked out in the Grave Look Lab prototype.
+        float facingYaw = player.getYRot() + 180f;
+        GraveSpawner.spawnEntities(level, result.pos(), grave, look, player.getGameProfile(), facingYaw);
         register(grave);
         saveToDisk();
 
@@ -257,16 +262,29 @@ public final class GraveManager {
         grave.shakeTicks = 20;
     }
 
+    /**
+     * Wobbles every visual piece of the grave's look assembly to signal a
+     * denied robbing attempt. All pieces share the same base position (see
+     * {@link GraveDisplayBuilder}), so moving each by the same offset keeps
+     * the whole assembly shaking together instead of just one part of it.
+     * The interaction hitbox is left stationary; it never needed to move for
+     * this to read as a shake.
+     */
     private static void tickShake(Grave grave, ServerLevel level) {
-        if (grave.shakeTicks <= 0 || grave.displayUuid == null) return;
+        if (grave.shakeTicks <= 0) return;
         grave.shakeTicks--;
-        Entity display = level.getEntity(grave.displayUuid);
-        if (display == null) return;
         double baseX = grave.x + 0.5;
         double baseZ = grave.z + 0.5;
         double offset = grave.shakeTicks % 2 == 0 ? 0.05 : -0.05;
         if (grave.shakeTicks == 0) offset = 0;
-        display.setPos(baseX + offset, grave.y, baseZ);
+        for (UUID uuid : grave.displayEntityUuids) {
+            Entity part = level.getEntity(uuid);
+            if (part != null) part.setPos(baseX + offset, grave.y, baseZ);
+        }
+        if (grave.legacyDisplayUuid != null) {
+            Entity legacy = level.getEntity(grave.legacyDisplayUuid);
+            if (legacy != null) legacy.setPos(baseX + offset, grave.y, baseZ);
+        }
     }
 
     // ------------------------------------------------------------------
@@ -328,8 +346,7 @@ public final class GraveManager {
                 }
                 spillXp(level, grave);
             }
-            for (UUID uuid : new UUID[]{grave.interactionUuid, grave.displayUuid, grave.nameTagUuid}) {
-                if (uuid == null) continue;
+            for (UUID uuid : allEntityUuids(grave)) {
                 Entity entity = level.getEntity(uuid);
                 if (entity != null) entity.discard();
             }
@@ -358,8 +375,8 @@ public final class GraveManager {
         UUID gid = ENTITY_INDEX.get(graveEntity.getUUID());
         if (gid != null) grave = GRAVES.get(gid);
         if (grave != null) {
-            for (UUID uuid : new UUID[]{grave.interactionUuid, grave.displayUuid, grave.nameTagUuid}) {
-                if (uuid == null || uuid.equals(graveEntity.getUUID())) continue;
+            for (UUID uuid : allEntityUuids(grave)) {
+                if (uuid.equals(graveEntity.getUUID())) continue;
                 Entity other = level.getEntity(uuid);
                 if (other != null) other.discard();
             }
@@ -371,11 +388,21 @@ public final class GraveManager {
     // Registry helpers
     // ------------------------------------------------------------------
 
+    /** Every entity UUID belonging to this grave: hitbox, look pieces, and any legacy singles. */
+    private static List<UUID> allEntityUuids(Grave grave) {
+        List<UUID> all = new ArrayList<>();
+        if (grave.interactionUuid != null) all.add(grave.interactionUuid);
+        all.addAll(grave.displayEntityUuids);
+        if (grave.legacyDisplayUuid != null) all.add(grave.legacyDisplayUuid);
+        if (grave.legacyNameTagUuid != null) all.add(grave.legacyNameTagUuid);
+        return all;
+    }
+
     private static void register(Grave grave) {
         GRAVES.put(grave.id, grave);
-        indexEntity(grave.interactionUuid, grave.id);
-        indexEntity(grave.displayUuid, grave.id);
-        indexEntity(grave.nameTagUuid, grave.id);
+        for (UUID uuid : allEntityUuids(grave)) {
+            indexEntity(uuid, grave.id);
+        }
     }
 
     private static void indexEntity(UUID entityUuid, UUID graveId) {
@@ -385,9 +412,9 @@ public final class GraveManager {
     private static void unregister(UUID graveId) {
         Grave grave = GRAVES.remove(graveId);
         if (grave != null) {
-            ENTITY_INDEX.remove(grave.interactionUuid);
-            ENTITY_INDEX.remove(grave.displayUuid);
-            ENTITY_INDEX.remove(grave.nameTagUuid);
+            for (UUID uuid : allEntityUuids(grave)) {
+                ENTITY_INDEX.remove(uuid);
+            }
         }
     }
 

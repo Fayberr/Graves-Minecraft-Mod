@@ -34,6 +34,16 @@ public final class GraveClothScreen {
         general.addEntry(slider(eb, "despawn_seconds", "Despawn After (seconds)", 0, 0, 3600,
                 "Seconds until graves despawn and spill their contents. 0 disables despawning."));
 
+        ConfigCategory looks = builder.getOrCreateCategory(Component.literal("Grave Looks"));
+        looks.addEntry(bool(eb, "grave_look_deepslate_grave", "Deepslate Grave", true,
+                "Upright deepslate headstone with a dirt mound. Part of the random pool when enabled."));
+        looks.addEntry(bool(eb, "grave_look_wooden_cross", "Wooden Cross", true,
+                "Rough wooden cross with a cobblestone base. Part of the random pool when enabled."));
+        looks.addEntry(bool(eb, "grave_look_deepslate_tombstone", "Deepslate Tombstone", true,
+                "Full-length sarcophagus with an engraved lid. Part of the random pool when enabled."));
+        looks.addEntry(bool(eb, "grave_look_soulgrave", "Soulgrave", true,
+                "Overgrown mossy grave lit by a soul lantern. Part of the random pool when enabled."));
+
         return builder.build();
     }
 
@@ -45,6 +55,10 @@ public final class GraveClothScreen {
             case "pick_up_xp" -> c.pick_up_xp;
             case "allow_locating" -> c.allow_locating;
             case "compatibility_mode" -> c.compatibility_mode;
+            case "grave_look_deepslate_grave" -> c.grave_look_deepslate_grave;
+            case "grave_look_wooden_cross" -> c.grave_look_wooden_cross;
+            case "grave_look_deepslate_tombstone" -> c.grave_look_deepslate_tombstone;
+            case "grave_look_soulgrave" -> c.grave_look_soulgrave;
             default -> defaultValue;
         };
         return eb.startBooleanToggle(Component.literal(label), current)
