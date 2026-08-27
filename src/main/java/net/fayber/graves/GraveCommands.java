@@ -149,7 +149,9 @@ public final class GraveCommands {
         }
         source.sendFailure(Component.literal("[Graves] Unknown config key '" + key
                 + "'. Valid keys: allow_robbing, pick_up_xp, allow_locating,"
-                + " compatibility_mode, despawn_seconds."));
+                + " compatibility_mode, despawn_seconds, grave_look_deepslate_grave,"
+                + " grave_look_wooden_cross, grave_look_deepslate_tombstone,"
+                + " grave_look_soulgrave."));
         return 0;
     }
 

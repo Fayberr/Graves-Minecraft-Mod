@@ -43,12 +43,24 @@ public class Grave {
     public String ownerName = "?";
     public int xpPoints;
     public long deathGameTime;
-    /** UUID of the text_display entity showing the owner name. */
-    public UUID nameTagUuid;
     /** UUID of the interaction entity acting as the clickable hitbox. */
     public UUID interactionUuid;
-    /** UUID of the item_display entity showing the item icon. */
-    public UUID displayUuid;
+    /**
+     * UUIDs of every block_display/item_display/text_display entity that make
+     * up this grave's {@link GraveLook} assembly.
+     */
+    public final List<UUID> displayEntityUuids = new ArrayList<>();
+    /** Which {@link GraveLook} this grave was spawned with, kept for reference. */
+    public String lookId;
+
+    /**
+     * Single-entity UUIDs from before the visual redesign (one item_display
+     * icon plus one text_display name). Always null for graves created after
+     * it; kept only so a grave saved by an older version of the mod still
+     * gets fully cleaned up once picked up, robbed, or despawned.
+     */
+    public UUID legacyDisplayUuid;
+    public UUID legacyNameTagUuid;
 
     public ResourceKey<Level> dimension;
     /** Final block position of the grave (the block the entities sit in). */
@@ -97,9 +109,15 @@ public class Grave {
         tag.putString("owner_name", ownerName);
         tag.putInt("xp", xpPoints);
         tag.putLong("death_time", deathGameTime);
-        putUuid(tag, "name_tag", nameTagUuid);
         putUuid(tag, "interaction", interactionUuid);
-        putUuid(tag, "display", displayUuid);
+        if (!displayEntityUuids.isEmpty()) {
+            tag.store("display_entities", UUIDUtil.CODEC.listOf(), displayEntityUuids);
+        }
+        if (lookId != null) tag.putString("look", lookId);
+        // Legacy single-entity fields, only ever non-null for a grave saved
+        // before the visual redesign and not yet cleaned up.
+        putUuid(tag, "name_tag", legacyNameTagUuid);
+        putUuid(tag, "display", legacyDisplayUuid);
         tag.putString("dim", dimensionId().toString());
         tag.putIntArray("pos", new int[]{x, y, z});
 
@@ -130,9 +148,13 @@ public class Grave {
         grave.ownerName = tag.getStringOr("owner_name", "?");
         grave.xpPoints = tag.getIntOr("xp", 0);
         grave.deathGameTime = tag.getLongOr("death_time", 0L);
-        grave.nameTagUuid = getUuid(tag, "name_tag");
         grave.interactionUuid = getUuid(tag, "interaction");
-        grave.displayUuid = getUuid(tag, "display");
+        grave.displayEntityUuids.clear();
+        grave.displayEntityUuids.addAll(
+                tag.read("display_entities", UUIDUtil.CODEC.listOf()).orElse(List.of()));
+        grave.lookId = tag.getString("look").orElse(null);
+        grave.legacyNameTagUuid = getUuid(tag, "name_tag");
+        grave.legacyDisplayUuid = getUuid(tag, "display");
 
         String dim = tag.getStringOr("dim", "minecraft:overworld");
         int sep = dim.indexOf(':');

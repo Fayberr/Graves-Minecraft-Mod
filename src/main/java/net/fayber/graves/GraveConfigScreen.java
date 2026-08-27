@@ -28,14 +28,18 @@ public class GraveConfigScreen extends Screen {
         int centerX = this.width / 2;
         int spacing = 22;
         int startY = 25;
+        // Two columns: general settings on the left, the four grave looks on
+        // the right. Keeps everything on screen at small GUI scales.
+        int leftX = centerX - 110;
+        int rightX = centerX + 110;
 
-        this.addRenderableWidget(booleanButton("allow_robbing", "Allow Robbing", centerX, startY));
-        this.addRenderableWidget(booleanButton("pick_up_xp", "Pick Up XP", centerX, startY + spacing));
-        this.addRenderableWidget(booleanButton("allow_locating", "Allow Locating", centerX, startY + spacing * 2));
-        this.addRenderableWidget(booleanButton("compatibility_mode", "Compatibility Mode", centerX, startY + spacing * 3));
+        this.addRenderableWidget(booleanButton("allow_robbing", "Allow Robbing", leftX, startY));
+        this.addRenderableWidget(booleanButton("pick_up_xp", "Pick Up XP", leftX, startY + spacing));
+        this.addRenderableWidget(booleanButton("allow_locating", "Allow Locating", leftX, startY + spacing * 2));
+        this.addRenderableWidget(booleanButton("compatibility_mode", "Compatibility Mode", leftX, startY + spacing * 3));
 
         int despawn = GraveConfig.get().despawn_seconds;
-        this.addRenderableWidget(new AbstractSliderButton(centerX - 100, startY + spacing * 4, 200, 20,
+        this.addRenderableWidget(new AbstractSliderButton(leftX - 100, startY + spacing * 4, 200, 20,
                 despawnLabel(despawn), (double) despawn / (double) MAX_DESPAWN_SECONDS) {
             @Override
             protected void updateMessage() {
@@ -49,6 +53,11 @@ public class GraveConfigScreen extends Screen {
                 this.setMessage(despawnLabel(secs));
             }
         });
+
+        this.addRenderableWidget(booleanButton("grave_look_deepslate_grave", "Deepslate Grave", rightX, startY));
+        this.addRenderableWidget(booleanButton("grave_look_wooden_cross", "Wooden Cross", rightX, startY + spacing));
+        this.addRenderableWidget(booleanButton("grave_look_deepslate_tombstone", "Deepslate Tombstone", rightX, startY + spacing * 2));
+        this.addRenderableWidget(booleanButton("grave_look_soulgrave", "Soulgrave", rightX, startY + spacing * 3));
 
         this.addRenderableWidget(Button.builder(Component.translatable("gui.back"), button ->
                 this.minecraft.setScreenAndShow(this.parent))
@@ -75,6 +84,10 @@ public class GraveConfigScreen extends Screen {
             case "pick_up_xp" -> c.pick_up_xp;
             case "allow_locating" -> c.allow_locating;
             case "compatibility_mode" -> c.compatibility_mode;
+            case "grave_look_deepslate_grave" -> c.grave_look_deepslate_grave;
+            case "grave_look_wooden_cross" -> c.grave_look_wooden_cross;
+            case "grave_look_deepslate_tombstone" -> c.grave_look_deepslate_tombstone;
+            case "grave_look_soulgrave" -> c.grave_look_soulgrave;
             default -> false;
         };
     }
