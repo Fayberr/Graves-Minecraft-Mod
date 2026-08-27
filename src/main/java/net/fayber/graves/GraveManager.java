@@ -135,6 +135,11 @@ public final class GraveManager {
         // Front of the grave faces back toward where the player died looking,
         // matching the convention worked out in the Grave Look Lab prototype.
         float facingYaw = player.getYRot() + 180f;
+        // Optional cardinal snap: restrict graves to the four compass directions
+        // instead of any of the full 360 degrees.
+        if (GraveConfig.get().grave_cardinal_facing_only) {
+            facingYaw = Math.round(facingYaw / 90f) * 90f;
+        }
         GraveSpawner.spawnEntities(level, result.pos(), grave, look, player.getGameProfile(), facingYaw);
         register(grave);
         saveToDisk();

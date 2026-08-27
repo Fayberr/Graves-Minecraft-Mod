@@ -59,6 +59,8 @@ public class GraveConfigScreen extends Screen {
         this.addRenderableWidget(booleanButton("grave_look_deepslate_tombstone", "Deepslate Tombstone", rightX, startY + spacing * 2));
         this.addRenderableWidget(booleanButton("grave_look_soulgrave", "Soulgrave", rightX, startY + spacing * 3));
 
+        this.addRenderableWidget(booleanButton("grave_cardinal_facing_only", "Cardinal Facing Only", leftX, startY + spacing * 5));
+
         this.addRenderableWidget(Button.builder(Component.translatable("gui.back"), button ->
                 this.minecraft.setScreenAndShow(this.parent))
                 .bounds(centerX - 100, this.height - 30, 200, 20)
@@ -88,6 +90,7 @@ public class GraveConfigScreen extends Screen {
             case "grave_look_wooden_cross" -> c.grave_look_wooden_cross;
             case "grave_look_deepslate_tombstone" -> c.grave_look_deepslate_tombstone;
             case "grave_look_soulgrave" -> c.grave_look_soulgrave;
+            case "grave_cardinal_facing_only" -> c.grave_cardinal_facing_only;
             default -> false;
         };
     }
