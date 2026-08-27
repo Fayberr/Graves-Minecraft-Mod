@@ -56,8 +56,6 @@ public final class GraveSpawner {
 
     /** Where a void platform search starts below the world. */
     private static final int WORLD_BOTTOM_Y = -2032;
-    /** Highest Y used when searching down from above the world for void placement. */
-    private static final int WORLD_TOP_Y = 2031;
 
     /** Where a grave ended up plus whether we built a cobblestone platform for it. */
     public record PlacementResult(BlockPos pos, boolean platform) {}
@@ -205,14 +203,16 @@ public final class GraveSpawner {
         return new PlacementResult(new BlockPos(floor(pos.getX() + 0.5), pos.getY(), floor(pos.getZ() + 0.5)), false);
     }
 
-    private static PlacementResult handleFallIntoVoid(WorldFacade level, BlockPos p0) {
-        if (level.isInWorldAndLoaded(p0)) {
-            return continueAboveVoid(level, p0, p0);
-        }
-        if (p0.getY() >= WORLD_TOP_Y + 1) {
-            return approachWorldTop(level, p0.getX(), WORLD_TOP_Y, p0.getZ(), p0);
-        }
-        return approachWorldTop(level, p0.getX(), p0.getY() - 9, p0.getZ(), p0);
+    /**
+     * The fall went all the way below the world, so the player died over the
+     * void. Rest the grave on a small cobblestone platform at the very bottom
+     * of the world (same X/Z as the death, lowest block) instead of back up
+     * where they died: the slab sits on the lowest block and the grave one
+     * above it, just out of void-damage range.
+     */
+    private static PlacementResult handleFallIntoVoid(WorldFacade level, BlockPos origin) {
+        BlockPos bottom = new BlockPos(floor(origin.getX() + 0.5), level.getMinY(), floor(origin.getZ() + 0.5));
+        return stopOnVoidPlatform(level, bottom);
     }
 
     private static PlacementResult continueAboveVoid(WorldFacade level, BlockPos pos, BlockPos origin) {
@@ -239,14 +239,6 @@ public final class GraveSpawner {
             pos = pos.above(16);
         }
         return continuePlacement(level, pos, origin);
-    }
-
-    private static PlacementResult approachWorldTop(WorldFacade level, int x, int y, int z, BlockPos origin) {
-        BlockPos pos = new BlockPos(x, y, z);
-        while (!level.isInWorldAndLoaded(pos)) {
-            pos = pos.below(16);
-        }
-        return continueAboveVoid(level, pos, origin);
     }
 
     private static PlacementResult startRepelling(WorldFacade level, BlockPos pos, boolean bypass, BlockPos origin) {
@@ -356,6 +348,7 @@ public final class GraveSpawner {
         void setBlock(BlockPos pos, BlockState state);
         int getHeight(Heightmap.Types type, int x, int z);
         boolean isInWorldAndLoaded(BlockPos pos);
+        int getMinY();
         List<Entity> getRepellingEntities(AABB box);
     }
 }
