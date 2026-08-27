@@ -42,6 +42,8 @@ public final class GraveConfig {
     public boolean grave_look_deepslate_tombstone = true;
     /** Whether the soulgrave look is in the random pool. */
     public boolean grave_look_soulgrave = true;
+    /** When true graves only face the four cardinal directions (90-degree increments). */
+    public boolean grave_cardinal_facing_only = true;
 
     /** True if the config file contained an explicit allow_locating value. */
     private transient boolean userSetAllowLocating = false;
@@ -69,6 +71,7 @@ public final class GraveConfig {
                     if (raw.grave_look_wooden_cross != null) cfg.grave_look_wooden_cross = raw.grave_look_wooden_cross;
                     if (raw.grave_look_deepslate_tombstone != null) cfg.grave_look_deepslate_tombstone = raw.grave_look_deepslate_tombstone;
                     if (raw.grave_look_soulgrave != null) cfg.grave_look_soulgrave = raw.grave_look_soulgrave;
+                    if (raw.grave_cardinal_facing_only != null) cfg.grave_cardinal_facing_only = raw.grave_cardinal_facing_only;
                 }
             } catch (Exception e) {
                 GravesMod.LOGGER.error("[Graves] Failed to read config, using defaults", e);
@@ -100,6 +103,7 @@ public final class GraveConfig {
         raw.grave_look_wooden_cross = INSTANCE.grave_look_wooden_cross;
         raw.grave_look_deepslate_tombstone = INSTANCE.grave_look_deepslate_tombstone;
         raw.grave_look_soulgrave = INSTANCE.grave_look_soulgrave;
+        raw.grave_cardinal_facing_only = INSTANCE.grave_cardinal_facing_only;
         // Preserve whether the user explicitly pinned allow_locating.
         if (INSTANCE.userSetAllowLocating) {
             raw.user_set_allow_locating = true;
@@ -125,6 +129,7 @@ public final class GraveConfig {
             case "grave_look_wooden_cross" -> c.grave_look_wooden_cross = parseBool(value);
             case "grave_look_deepslate_tombstone" -> c.grave_look_deepslate_tombstone = parseBool(value);
             case "grave_look_soulgrave" -> c.grave_look_soulgrave = parseBool(value);
+            case "grave_cardinal_facing_only" -> c.grave_cardinal_facing_only = parseBool(value);
             default -> {
                 return false;
             }
@@ -174,7 +179,8 @@ public final class GraveConfig {
                 + ", grave_look_deepslate_grave=" + grave_look_deepslate_grave
                 + ", grave_look_wooden_cross=" + grave_look_wooden_cross
                 + ", grave_look_deepslate_tombstone=" + grave_look_deepslate_tombstone
-                + ", grave_look_soulgrave=" + grave_look_soulgrave;
+                + ", grave_look_soulgrave=" + grave_look_soulgrave
+                + ", grave_cardinal_facing_only=" + grave_cardinal_facing_only;
     }
 
     /** JSON shape on disk; boxed so missing keys keep their defaults. */
@@ -188,6 +194,7 @@ public final class GraveConfig {
         Boolean grave_look_wooden_cross;
         Boolean grave_look_deepslate_tombstone;
         Boolean grave_look_soulgrave;
+        Boolean grave_cardinal_facing_only;
         @SuppressWarnings("unused")
         Boolean user_set_allow_locating;
     }

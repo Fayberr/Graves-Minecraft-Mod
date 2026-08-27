@@ -33,6 +33,8 @@ public final class GraveClothScreen {
                 "Keeps the mod passive so a datapack version can take over."));
         general.addEntry(slider(eb, "despawn_seconds", "Despawn After (seconds)", 0, 0, 3600,
                 "Seconds until graves despawn and spill their contents. 0 disables despawning."));
+        general.addEntry(bool(eb, "grave_cardinal_facing_only", "Cardinal Facing Only", true,
+                "Graves face only the four cardinal directions (90-degree increments) instead of any rotation."));
 
         ConfigCategory looks = builder.getOrCreateCategory(Component.literal("Grave Looks"));
         looks.addEntry(bool(eb, "grave_look_deepslate_grave", "Deepslate Grave", true,
@@ -59,6 +61,7 @@ public final class GraveClothScreen {
             case "grave_look_wooden_cross" -> c.grave_look_wooden_cross;
             case "grave_look_deepslate_tombstone" -> c.grave_look_deepslate_tombstone;
             case "grave_look_soulgrave" -> c.grave_look_soulgrave;
+            case "grave_cardinal_facing_only" -> c.grave_cardinal_facing_only;
             default -> defaultValue;
         };
         return eb.startBooleanToggle(Component.literal(label), current)

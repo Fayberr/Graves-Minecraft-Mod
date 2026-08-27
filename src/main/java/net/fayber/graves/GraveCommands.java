@@ -151,7 +151,7 @@ public final class GraveCommands {
                 + "'. Valid keys: allow_robbing, pick_up_xp, allow_locating,"
                 + " compatibility_mode, despawn_seconds, grave_look_deepslate_grave,"
                 + " grave_look_wooden_cross, grave_look_deepslate_tombstone,"
-                + " grave_look_soulgrave."));
+                + " grave_look_soulgrave, grave_cardinal_facing_only."));
         return 0;
     }
 
