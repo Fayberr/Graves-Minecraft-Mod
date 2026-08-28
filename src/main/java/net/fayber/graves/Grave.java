@@ -22,20 +22,15 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
-import java.util.Optional;
 import java.util.UUID;
 
-/**
- * A single grave: the captured inventory of one death plus bookkeeping data.
- *
- * Items are stored as parallel lists ({@code items}/{@code slots}) so each stack
- * remembers which player inventory slot (0-40) it came from. The whole grave
- * round-trips through a {@link CompoundTag} so it can be persisted to disk.
- */
+// One grave: a captured inventory plus bookkeeping. Items and slots are
+// parallel lists so each stack remembers its origin inventory slot (0-40).
+// The whole thing round-trips through NBT for persistence.
 public class Grave {
-    /** Grave contents. Parallel to {@link #slots}. */
+    // grave contents, parallel to slots
     public final List<ItemStack> items = new ArrayList<>();
-    /** Origin player inventory slot for each entry in {@link #items} (0-40). */
+    // origin player inventory slot for each entry in items (0-40)
     public final List<Integer> slots = new ArrayList<>();
 
     public UUID id;
@@ -43,27 +38,20 @@ public class Grave {
     public String ownerName = "?";
     public int xpPoints;
     public long deathGameTime;
-    /** UUID of the interaction entity acting as the clickable hitbox. */
+    // the interaction entity acting as the clickable hitbox
     public UUID interactionUuid;
-    /**
-     * UUIDs of every block_display/item_display/text_display entity that make
-     * up this grave's {@link GraveLook} assembly.
-     */
+    // uuids of every display entity making up this grave's look
     public final List<UUID> displayEntityUuids = new ArrayList<>();
-    /** Which {@link GraveLook} this grave was spawned with, kept for reference. */
     public String lookId;
 
-    /**
-     * Single-entity UUIDs from before the visual redesign (one item_display
-     * icon plus one text_display name). Always null for graves created after
-     * it; kept only so a grave saved by an older version of the mod still
-     * gets fully cleaned up once picked up, robbed, or despawned.
-     */
+    // single-entity uuids from before the visual redesign (one item_display
+    // icon plus one text_display name). Kept so graves saved by an older
+    // version still get fully cleaned up.
     public UUID legacyDisplayUuid;
     public UUID legacyNameTagUuid;
 
     public ResourceKey<Level> dimension;
-    /** Final block position of the grave (the block the entities sit in). */
+    // final block position (the block the entities sit in)
     public int x, y, z;
 
     // Transient runtime state (not persisted).
@@ -74,34 +62,11 @@ public class Grave {
         this.id = UUID.randomUUID();
     }
 
-    public boolean isEmpty() {
-        boolean anyItem = false;
-        for (ItemStack stack : items) {
-            if (!stack.isEmpty()) { anyItem = true; break; }
-        }
-        return !anyItem && xpPoints <= 0;
-    }
-
     public Identifier dimensionId() {
         return dimension.identifier();
     }
 
-    /**
-     * Removes the stacks at the given indices (used after a partial pickup).
-     * Indices must be sorted ascending.
-     */
-    public void removeIndices(List<Integer> indices) {
-        for (int i = indices.size() - 1; i >= 0; i--) {
-            int idx = indices.get(i);
-            items.remove(idx);
-            slots.remove(idx);
-        }
-    }
-
-    // ------------------------------------------------------------------
-    // Serialization
-    // ------------------------------------------------------------------
-
+    // serialization
     public CompoundTag toTag(HolderLookup.Provider registries) {
         CompoundTag tag = new CompoundTag();
         putUuid(tag, "id", id);
@@ -194,7 +159,7 @@ public class Grave {
         return tag.read(key, UUIDUtil.CODEC).orElse(null);
     }
 
-    /** Whole-grave NBT compressed and base64 encoded, for storage inside JSON. */
+    // compressed nbt as base64, for storage inside the json file
     public String toBase64(HolderLookup.Provider registries) {
         try {
             ByteArrayOutputStream bytes = new ByteArrayOutputStream();

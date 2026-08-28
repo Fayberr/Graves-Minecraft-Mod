@@ -7,10 +7,8 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.DoubleTag;
-import net.minecraft.nbt.FloatTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.resources.Identifier;
-import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.TagKey;
 import net.minecraft.util.ProblemReporter;
 import net.minecraft.world.entity.Entity;
@@ -30,13 +28,8 @@ import net.minecraft.world.phys.AABB;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Spawns the grave entity stack (a {@link GraveLook} plus an interaction
- * hitbox) and implements the Vanilla Tweaks grave placement state machine.
- *
- * Display entities expose no public setters for their render state in 26.1, so
- * all display configuration happens through spawn NBT.
- */
+// Spawns the grave entities and implements the Vanilla Tweaks grave placement
+// state machine. Display config happens through spawn NBT.
 public final class GraveSpawner {
     private GraveSpawner() {}
 
@@ -54,26 +47,17 @@ public final class GraveSpawner {
     public static final String ENTITY_TAG_GRAVE = "graves:grave";
     public static final String ENTITY_TAG_NON_REPELLING = "graves:non_grave_repelling";
 
-    /** Where a void platform search starts below the world. */
+    // where a void platform search starts below the world
     private static final int WORLD_BOTTOM_Y = -2032;
 
-    /** Where a grave ended up plus whether we built a cobblestone platform for it. */
+    // where a grave ended up plus whether we built a cobblestone platform
     public record PlacementResult(BlockPos pos, boolean platform) {}
 
-    // ------------------------------------------------------------------
     // Entity spawning
-    // ------------------------------------------------------------------
 
-    /**
-     * Spawns the interaction hitbox plus every display entity of {@code look}
-     * around {@code pos}, and fills in the entity UUIDs on the grave object.
-     *
-     * The hitbox no longer rides a single display entity the way the old
-     * one-piece grave did: a look is a whole pile of pieces sharing one
-     * position, so there is nothing single to ride, and a stationary hitbox
-     * at the grave centre is enough to click. Only the visual pieces move
-     * during the deny-robbing shake (see {@code GraveManager#tickShake}).
-     */
+    // Spawns the invisible click hitbox plus the look's display pieces.
+    // The hitbox stays at the grave centre; only the visual pieces move
+    // during the deny-robbing shake.
     public static void spawnEntities(Level level, BlockPos pos, Grave grave,
                                      GraveLook look, GameProfile ownerProfile, float facingYaw) {
         double cx = pos.getX() + 0.5;
@@ -94,7 +78,9 @@ public final class GraveSpawner {
         if (interaction != null) {
             level.addFreshEntity(interaction);
             interaction.addTag(ENTITY_TAG_GRAVE);
-            interaction.addTag(ENTITY_TAG_NON_REPELLING);
+            // No NON_REPELLING tag here on purpose: an existing grave must
+            // repel the placement search so two deaths in the same block
+            // don't stack graves on top of each other.
         }
         grave.interactionUuid = interaction != null ? interaction.getUUID() : interactionId;
 
@@ -115,16 +101,13 @@ public final class GraveSpawner {
         return tag;
     }
 
-    /**
-     * Builds an entity from hand-written NBT without going through spawn logic,
-     * exactly like a chunk-load would.
-     */
+    // builds an entity from hand-written NBT, like a chunk load would
     private static Entity loadEntity(Level level, EntityType<?> type, CompoundTag nbt) {
         ValueInput input = TagValueInput.create(ProblemReporter.DISCARDING, level.registryAccess(), nbt);
         return EntityType.create(type, input, level, EntitySpawnReason.LOAD).orElse(null);
     }
 
-    /** 26.2 removed the EntityType.*_DISPLAY/INTERACTION constants; look them up. */
+    // 26.2 removed the EntityType.*_DISPLAY/INTERACTION constants; look them up.
     private static EntityType<?> entityType(String id) {
         return BuiltInRegistries.ENTITY_TYPE.getValue(Identifier.fromNamespaceAndPath("minecraft", id));
     }
@@ -135,21 +118,10 @@ public final class GraveSpawner {
         return list;
     }
 
-    private static ListTag floatList(float... values) {
-        ListTag list = new ListTag();
-        for (float v : values) list.add(FloatTag.valueOf(v));
-        return list;
-    }
+    // placement state machine, ported from the datapack functions
 
-    // ------------------------------------------------------------------
-    // Placement state machine (port of the datapack functions)
-    // ------------------------------------------------------------------
-
-    /**
-     * Runs the full placement search synchronously from the death position and
-     * returns where the grave should sit. Never fails: worst case it builds a
-     * cobblestone platform in the void.
-     */
+    // Full placement search from the death position. Never fails: worst case
+    // it builds a cobblestone platform in the void.
     public static PlacementResult placeGrave(WorldFacade level, double px, double py, double pz) {
         BlockPos p0 = new BlockPos(floor(px), floor(py + 0.5), floor(pz));
 
@@ -203,26 +175,14 @@ public final class GraveSpawner {
         return new PlacementResult(new BlockPos(floor(pos.getX() + 0.5), pos.getY(), floor(pos.getZ() + 0.5)), false);
     }
 
-    /**
-     * The fall went all the way below the world, so the player died over the
-     * void. Rest the grave on a small cobblestone platform at the very bottom
-     * of the world (same X/Z as the death, lowest block) instead of back up
-     * where they died: the slab sits on the lowest block and the grave one
-     * above it, just out of void-damage range.
-     */
+    // The fall went all the way below the world, so the player died over the
+    // void. Rest the grave on a small cobblestone platform at the very bottom
+    // of the world (same X/Z as the death, lowest block) instead of back up
+    // where they died: the slab sits on the lowest block and the grave one
+    // above it, just out of void-damage range.
     private static PlacementResult handleFallIntoVoid(WorldFacade level, BlockPos origin) {
         BlockPos bottom = new BlockPos(floor(origin.getX() + 0.5), level.getMinY(), floor(origin.getZ() + 0.5));
         return stopOnVoidPlatform(level, bottom);
-    }
-
-    private static PlacementResult continueAboveVoid(WorldFacade level, BlockPos pos, BlockPos origin) {
-        if (isRepelling(level, pos)) {
-            return startRepelling(level, pos, false, origin);
-        }
-        if (level.getBlockState(pos).is(BlockTags.REPLACEABLE)) {
-            return stopOnVoidPlatform(level, pos);
-        }
-        return stop(pos);
     }
 
     private static PlacementResult stopOnVoidPlatform(WorldFacade level, BlockPos pos) {
@@ -285,10 +245,8 @@ public final class GraveSpawner {
         return continueRepelling(level, pos.above(), bypass, origin);
     }
 
-    /**
-     * True if ANY of the four side markers is NOT repelling; markers sit just
-     * outside each wall of the block at the grave's Y level.
-     */
+    // True if ANY of the four side markers is NOT repelling; markers sit just
+    // outside each wall of the block at the grave's Y level.
     private static boolean anyMarkerFree(WorldFacade level, BlockPos pos) {
         return !isRepelling(level, markerPos(pos, Side.NORTH))
                 || !isRepelling(level, markerPos(pos, Side.SOUTH))
@@ -296,7 +254,7 @@ public final class GraveSpawner {
                 || !isRepelling(level, markerPos(pos, Side.EAST));
     }
 
-    /** First side marker whose block is NOT impenetrable, or null. Order: N, S, W, E. */
+    // First side marker whose block is NOT impenetrable, or null. Order: N, S, W, E.
     private static BlockPos nearestFreeSideMarker(WorldFacade level, BlockPos pos) {
         for (Side side : List.of(Side.NORTH, Side.SOUTH, Side.WEST, Side.EAST)) {
             BlockPos marker = markerPos(pos, side);
@@ -307,11 +265,9 @@ public final class GraveSpawner {
         return null;
     }
 
-    /**
-     * Marker coordinates mirror the datapack offsets:
-     * N=(x,y,z-0.25), S=(x,y,z+1.25), W=(x-0.25,y,z), E=(x+1.25,y,z),
-     * converted back to the block each marker falls inside.
-     */
+    // Marker coordinates mirror the datapack offsets:
+    // N=(x,y,z-0.25), S=(x,y,z+1.25), W=(x-0.25,y,z), E=(x+1.25,y,z),
+    // converted back to the block each marker falls inside.
     private static BlockPos markerPos(BlockPos pos, Side side) {
         double mx = pos.getX();
         double mz = pos.getZ();
@@ -324,10 +280,8 @@ public final class GraveSpawner {
         return BlockPos.containing(mx, pos.getY(), mz);
     }
 
-    /**
-     * A position is repelling when its block does NOT attract graves, or when a
-     * repelling-type entity (not flagged non_grave_repelling) occupies it.
-     */
+    // A position is repelling when its block does NOT attract graves, or when a
+    // repelling-type entity (not flagged non_grave_repelling) occupies it.
     private static boolean isRepelling(WorldFacade level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
         if (!state.is(TAG_ATTRACTING)) {
@@ -342,7 +296,7 @@ public final class GraveSpawner {
 
     private enum Side { NORTH, SOUTH, WEST, EAST }
 
-    /** Minimal facade over ServerLevel so the state machine stays decoupled. */
+    // Minimal facade over ServerLevel so the state machine stays decoupled.
     public interface WorldFacade {
         BlockState getBlockState(BlockPos pos);
         void setBlock(BlockPos pos, BlockState state);

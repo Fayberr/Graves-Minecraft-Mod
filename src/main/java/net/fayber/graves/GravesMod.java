@@ -4,12 +4,7 @@ import net.fabricmc.api.ModInitializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * Entrypoint for the Graves mod.
- *
- * Loads the config, then registers death/interaction/tick events and the
- * {@code /graves} command.
- */
+// mod entrypoint: load config, wire up events and the /graves command
 public class GravesMod implements ModInitializer {
     public static final String MOD_ID = "graves";
     public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
@@ -17,7 +12,6 @@ public class GravesMod implements ModInitializer {
     @Override
     public void onInitialize() {
         GraveConfig.load();
-
         GraveEvents.register();
 
         LOGGER.info("[Graves] Initialized. Config: {}", GraveConfig.get());

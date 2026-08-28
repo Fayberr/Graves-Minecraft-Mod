@@ -33,30 +33,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
-/**
- * Spawns the vanilla display entities (block_display / item_display /
- * text_display) that make up one {@link GraveLook}'s geometry, all at a
- * shared position and yaw.
- *
- * Ported from the Grave Look Lab scratch mod (a separate project used only to
- * prototype grave visuals before landing them here). See that project's
- * README and the {@code mc-display-entity-geometry} brain note for the
- * rendering gotchas this relies on: block_display grows from its origin
- * corner while item_display is origin-centred, a text_display's readable
- * face is its local +Z, and text is bottom-anchored rather than centred.
- *
- * Every piece spawns at the same entity Pos and Rotation; shape comes only
- * from each display's own {@code transformation} translation. That keeps the
- * whole assembly rotating as a rigid body, and lets {@link GraveManager}'s
- * shake animation move every piece by the same offset instead of tracking
- * per-piece transforms.
- *
- * Entity type lookups go through the registry rather than
- * {@code EntityType.BLOCK_DISPLAY} style constants, matching the pattern
- * {@link GraveSpawner} already uses for interaction/item_display/text_display
- * so this file needs no changes when ported to a Minecraft version that
- * removes those constants (26.2 already did).
- */
+// Spawns the display entities (block_display / item_display / text_display)
+// making up a GraveLook's geometry, all at one shared position and yaw.
+// Every piece spawns at the same Pos/Rotation and gets its shape purely from
+// its own transformation, so the assembly rotates rigidly and the shake
+// animation can move everything with one offset. Renderer gotchas this works
+// around: block_display grows from its origin corner, item_display is
+// origin-centred, text_display reads on its local +Z and is bottom-anchored.
 public final class GraveDisplayBuilder {
 
     private final Level level;
@@ -66,12 +49,7 @@ public final class GraveDisplayBuilder {
     private final float yaw;
     private final List<Entity> spawned = new ArrayList<>();
 
-    /**
-     * @param anchorX block-centre X of the grave
-     * @param anchorY ground height the grave stands on
-     * @param anchorZ block-centre Z of the grave
-     * @param yaw     entity yaw; local +Z ends up pointing this way
-     */
+    // anchor = block centre x/z, ground height y; yaw points local +Z
     public GraveDisplayBuilder(Level level, double anchorX, double anchorY, double anchorZ, float yaw) {
         this.level = level;
         this.ax = anchorX;
@@ -84,16 +62,10 @@ public final class GraveDisplayBuilder {
         return List.copyOf(spawned);
     }
 
-    /**
-     * A rectangular slab of a block texture, centred at ({@code cx}, {@code cz})
-     * and resting on {@code cyBase}.
-     *
-     * A block_display renders its block model filling the unit cube that
-     * starts at the entity origin and grows toward +X/+Y/+Z, so the
-     * translation pulls it back by half its footprint. With a per-piece
-     * rotation in play that offset must itself be rotated, otherwise the
-     * piece orbits its corner instead of spinning in place.
-     */
+    // a slab of block texture centred at (cx, cz), resting on cyBase.
+    // block_display grows from its origin corner, so the translation pulls it
+    // back by half its footprint; that offset must itself be rotated or the
+    // piece orbits its corner instead of spinning in place.
     public Entity block(BlockState state,
                         double cx, double cyBase, double cz,
                         double sx, double sy, double sz,
@@ -119,19 +91,15 @@ public final class GraveDisplayBuilder {
         return spawn(entityType("block_display"), nbt);
     }
 
-    /** Convenience overload for an axis-aligned piece. */
+    // axis-aligned convenience overload
     public Entity block(BlockState state,
                         double cx, double cyBase, double cz,
                         double sx, double sy, double sz) {
         return block(state, cx, cyBase, cz, sx, sy, sz, new Quaternionf());
     }
 
-    /**
-     * An item rendered in the world, centred on the given local point.
-     *
-     * Unlike a block_display, an item_display's model is already centred on
-     * the entity origin, so no half-size correction is needed here.
-     */
+    // an item centred on the given local point; item_display models are
+    // already origin-centred, unlike block_display
     public Entity item(ItemStack stack, double cx, double cy, double cz, double scale, Quaternionf rot) {
         CompoundTag nbt = base(entityType("item_display"));
         nbt.putString("item_display", "fixed");
@@ -147,12 +115,8 @@ public final class GraveDisplayBuilder {
         return spawn(entityType("item_display"), nbt);
     }
 
-    /**
-     * A flat text panel, fixed in space rather than turning to follow the
-     * camera. The background is switched off entirely (transparent,
-     * non-default) so the glyphs read as carved into whatever surface sits
-     * behind them instead of floating on the usual dark nameplate quad.
-     */
+    // flat text panel fixed in space; background switched off so the glyphs
+    // read as carved into the surface behind them instead of a nameplate quad
     public Entity engravedText(Component text, double cx, double cy, double cz, double scale, Quaternionf rot) {
         CompoundTag nbt = base(entityType("text_display"));
         nbt.putString("billboard", "fixed");
@@ -175,18 +139,14 @@ public final class GraveDisplayBuilder {
         return spawn(entityType("text_display"), nbt);
     }
 
-    // ------------------------------------------------------------------
-    // Helpers
-    // ------------------------------------------------------------------
-
-    /** A player head item stack wearing the given profile's skin. */
+    // helpers
     public static ItemStack playerHead(GameProfile profile) {
         ItemStack stack = new ItemStack(Items.PLAYER_HEAD);
         stack.set(DataComponents.PROFILE, ResolvableProfile.createResolved(profile));
         return stack;
     }
 
-    /** Rotation of {@code degrees} about the local vertical axis. */
+    // Rotation of degrees about the local vertical axis.
     public static Quaternionf yawQuat(float degrees) {
         return new Quaternionf().rotateY((float) Math.toRadians(degrees));
     }
@@ -197,8 +157,7 @@ public final class GraveDisplayBuilder {
         tag.store("UUID", UUIDUtil.CODEC, UUID.randomUUID());
         tag.put("Pos", doubles(ax, ay, az));
         tag.put("Rotation", floats(yaw, 0f));
-        // Vanilla default render distance, deliberately not cranked: how far
-        // a grave stays visible is part of the design, not an oversight.
+        // vanilla default render distance, deliberately not cranked
         tag.putFloat("view_range", 1.0f);
         return tag;
     }
@@ -209,9 +168,8 @@ public final class GraveDisplayBuilder {
         if (entity == null) {
             return null;
         }
-        // Not the grave's own interaction hitbox, so it must not repel a
-        // later grave's placement search the way a bare `interaction` entity
-        // normally would (see graves:grave_repelling).
+        // not the clickable hitbox, so it must not repel a later grave's
+        // placement search the way a bare interaction entity would
         entity.addTag(GraveSpawner.ENTITY_TAG_NON_REPELLING);
         level.addFreshEntity(entity);
         spawned.add(entity);

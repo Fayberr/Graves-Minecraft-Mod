@@ -7,11 +7,9 @@ import me.shedaniel.clothconfig2.api.ConfigEntryBuilder;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/**
- * Cloth Config based config screen (the nicer ModMenu GUI used by most mods).
- * Optional dependency: when Cloth Config is installed, ModMenu opens this
- * instead of the hand-rolled {@link GraveConfigScreen}.
- */
+// Cloth Config based config screen (the nicer ModMenu GUI used by most mods).
+// Optional dependency: when Cloth Config is installed, ModMenu opens this
+// instead of the hand-rolled GraveConfigScreen.
 public final class GraveClothScreen {
     private GraveClothScreen() {}
 

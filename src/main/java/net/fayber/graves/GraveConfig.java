@@ -10,14 +10,9 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Mod config, stored as {@code config/graves.json}.
- *
- * Defaults mirror the Vanilla Tweaks datapack defaults:
- * allow_robbing=false, pick_up_xp=true, compatibility_mode=false, despawn_seconds=0.
- * allow_locating is derived at server start from the reducedDebugInfo gamerule
- * unless it was set explicitly in the file.
- */
+// mod config, stored as config/graves.json. Defaults mirror the Vanilla
+// Tweaks datapack. allow_locating is derived at server start from the
+// reducedDebugInfo gamerule unless set explicitly in the file.
 public final class GraveConfig {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
     private static final Path PATH = FabricLoader.getInstance().getConfigDir().resolve("graves.json");
@@ -81,10 +76,7 @@ public final class GraveConfig {
         save();
     }
 
-    /**
-     * Called once the server (and its gamerules) exist: derive allow_locating
-     * from reducedDebugInfo unless the user pinned it in the config file.
-     */
+    // derive allow_locating from the gamerule unless the user pinned it
     public static void onServerStarted(boolean reducedDebugInfo) {
         if (!INSTANCE.userSetAllowLocating) {
             INSTANCE.allow_locating = !reducedDebugInfo;
@@ -104,7 +96,7 @@ public final class GraveConfig {
         raw.grave_look_deepslate_tombstone = INSTANCE.grave_look_deepslate_tombstone;
         raw.grave_look_soulgrave = INSTANCE.grave_look_soulgrave;
         raw.grave_cardinal_facing_only = INSTANCE.grave_cardinal_facing_only;
-        // Preserve whether the user explicitly pinned allow_locating.
+        // keep whether the user explicitly pinned allow_locating
         if (INSTANCE.userSetAllowLocating) {
             raw.user_set_allow_locating = true;
         }
@@ -116,7 +108,7 @@ public final class GraveConfig {
         }
     }
 
-    /** Sets a key by name from the command; returns false if unknown. */
+    // sets a config key by name from the command, false if unknown
     public static boolean set(String key, String value) {
         GraveConfig c = INSTANCE;
         switch (key.toLowerCase()) {
@@ -142,7 +134,7 @@ public final class GraveConfig {
         return v.equalsIgnoreCase("true") || v.equals("1") || v.equalsIgnoreCase("yes");
     }
 
-    /** Whether the given look is enabled and should take part in random selection. */
+    // whether the look takes part in random selection
     public boolean isLookEnabled(GraveLook look) {
         return switch (look) {
             case DEEPSLATE_GRAVE -> grave_look_deepslate_grave;
@@ -152,11 +144,8 @@ public final class GraveConfig {
         };
     }
 
-    /**
-     * The enabled looks a death can randomly spawn from. If every look is
-     * disabled this falls back to all four (with a warning) rather than
-     * blocking grave spawning entirely.
-     */
+    // the looks a death can randomly spawn from; falls back to all four if
+    // every look is disabled rather than blocking grave spawning
     public List<GraveLook> enabledLooks() {
         List<GraveLook> pool = new ArrayList<>();
         for (GraveLook look : GraveLook.values()) {
@@ -183,7 +172,7 @@ public final class GraveConfig {
                 + ", grave_cardinal_facing_only=" + grave_cardinal_facing_only;
     }
 
-    /** JSON shape on disk; boxed so missing keys keep their defaults. */
+    // json shape on disk; boxed so missing keys keep their defaults
     private static class Raw {
         Boolean allow_robbing;
         Boolean pick_up_xp;
