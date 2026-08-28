@@ -6,14 +6,12 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 
-/**
- * Hand-rolled ModMenu config screen. Every control writes through
- * {@link GraveConfig#set(String, String)}, which updates the in-memory config
- * and saves it to {@code config/graves.json}. In singleplayer the integrated
- * server shares the same static config, so changes apply live.
- */
+// Hand-rolled ModMenu config screen. Every control writes through
+// GraveConfig#set(String, String), which updates the in-memory config
+// and saves it to config/graves.json. In singleplayer the integrated
+// server shares the same static config, so changes apply live.
 public class GraveConfigScreen extends Screen {
-    /** Slider top end, in seconds (0 means "never despawn"). */
+    // slider top end, in seconds (0 means "never despawn")
     private static final int MAX_DESPAWN_SECONDS = 3600;
 
     private final Screen parent;
@@ -67,7 +65,7 @@ public class GraveConfigScreen extends Screen {
                 .build());
     }
 
-    /** A toggle that flips the named boolean config key and saves it. */
+    // toggle that flips the named boolean config key and saves it
     private Button booleanButton(String key, String label, int centerX, int y) {
         boolean current = readBool(key);
         return Button.builder(toggleText(label, current), button -> {

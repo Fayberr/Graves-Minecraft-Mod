@@ -146,7 +146,7 @@ public final class GraveDisplayBuilder {
         return stack;
     }
 
-    // Rotation of {@code degrees} about the local vertical axis.
+    // Rotation of degrees about the local vertical axis.
     public static Quaternionf yawQuat(float degrees) {
         return new Quaternionf().rotateY((float) Math.toRadians(degrees));
     }

@@ -111,14 +111,14 @@ public enum GraveLook {
     // tuned constants (Grave Look Lab 0.1.2 defaults, approved as-is)
 
     // Local Z of the front face of a standard headstone: its centre plus half
-// its thickness. Text clearance on top of this comes from TEXT_LIFT.
+    // its thickness. Text clearance on top of this comes from TEXT_LIFT.
 
     private static final double STONE_FRONT_Z = -0.28 + 0.08;
 
     // Height an engraved name is centred on for an upright stone. The slab
-// spans 0.14 to 1.06 (mid 0.60); sitting the name in the upper third
-// instead leaves the lower half clear for the mound and head in front of
-// it, the way a real headstone carries its inscription up top.
+    // spans 0.14 to 1.06 (mid 0.60); sitting the name in the upper third
+    // instead leaves the lower half clear for the mound and head in front of
+    // it, the way a real headstone carries its inscription up top.
 
     private static final double STONE_TEXT_CENTRE = 0.74;
 
@@ -145,8 +145,8 @@ public enum GraveLook {
     private static final double TEXT_LIFT = 0.012;
 
     // World height of one line of display text at transformation scale 1.
-// Text is bottom-anchored, not centred, so every call site below
-// positions by centre and subtracts half of this.
+    // Text is bottom-anchored, not centred, so every call site below
+    // positions by centre and subtracts half of this.
 
     private static final double TEXT_LINE_HEIGHT = 0.225;
 

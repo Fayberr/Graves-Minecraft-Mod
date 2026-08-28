@@ -242,7 +242,7 @@ public final class GraveSpawner {
     }
 
     // True if ANY of the four side markers is NOT repelling; markers sit just
-// outside each wall of the block at the grave's Y level.
+    // outside each wall of the block at the grave's Y level.
 
     private static boolean anyMarkerFree(WorldFacade level, BlockPos pos) {
         return !isRepelling(level, markerPos(pos, Side.NORTH))
@@ -263,8 +263,8 @@ public final class GraveSpawner {
     }
 
     // Marker coordinates mirror the datapack offsets:
-// N=(x,y,z-0.25), S=(x,y,z+1.25), W=(x-0.25,y,z), E=(x+1.25,y,z),
-// converted back to the block each marker falls inside.
+    // N=(x,y,z-0.25), S=(x,y,z+1.25), W=(x-0.25,y,z), E=(x+1.25,y,z),
+    // converted back to the block each marker falls inside.
 
     private static BlockPos markerPos(BlockPos pos, Side side) {
         double mx = pos.getX();
@@ -279,7 +279,7 @@ public final class GraveSpawner {
     }
 
     // A position is repelling when its block does NOT attract graves, or when a
-// repelling-type entity (not flagged non_grave_repelling) occupies it.
+    // repelling-type entity (not flagged non_grave_repelling) occupies it.
 
     private static boolean isRepelling(WorldFacade level, BlockPos pos) {
         BlockState state = level.getBlockState(pos);
