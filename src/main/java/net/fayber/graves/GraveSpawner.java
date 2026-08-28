@@ -172,11 +172,10 @@ public final class GraveSpawner {
     }
 
     // The fall went all the way below the world, so the player died over the
-// void. Rest the grave on a small cobblestone platform at the very bottom
-// of the world (same X/Z as the death, lowest block) instead of back up
-// where they died: the slab sits on the lowest block and the grave one
-// above it, just out of void-damage range.
-
+    // void. Rest the grave on a small cobblestone platform at the very bottom
+    // of the world (same X/Z as the death, lowest block) instead of back up
+    // where they died: the slab sits on the lowest block and the grave one
+    // above it, just out of void-damage range.
     private static PlacementResult handleFallIntoVoid(WorldFacade level, BlockPos origin) {
         BlockPos bottom = new BlockPos(floor(origin.getX() + 0.5), level.getMinY(), floor(origin.getZ() + 0.5));
         return stopOnVoidPlatform(level, bottom);
