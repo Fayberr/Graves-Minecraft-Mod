@@ -9,10 +9,7 @@ import net.minecraft.server.level.ServerPlayer;
 
 import java.util.List;
 
-/**
- * {@code /graves} command, the mod equivalent of the datapack's
- * {@code /trigger graves} menu: list, locate, key, config.
- */
+// /graves command: the mod equivalent of the datapack /trigger graves menu
 public final class GraveCommands {
     private GraveCommands() {}
 
@@ -65,7 +62,7 @@ public final class GraveCommands {
         return graves.size();
     }
 
-    /** Human-friendly dimension name: minecraft:overworld -> Overworld, minecraft:the_nether -> The Nether. */
+    // minecraft:the_nether -> The Nether
     private static String dimensionName(Grave grave) {
         String path = grave.dimensionId().getPath();
         StringBuilder name = new StringBuilder();
@@ -77,7 +74,7 @@ public final class GraveCommands {
         return name.length() > 0 ? name.toString() : path;
     }
 
-    /** Seconds since the grave was created, as a short relative phrase ("5 minutes ago"). */
+    // "5 minutes ago" style relative age
     private static String formatAge(long seconds) {
         if (seconds < 5) return "just now";
         if (seconds < 60) return seconds + " seconds ago";
@@ -155,13 +152,13 @@ public final class GraveCommands {
         return 0;
     }
 
-    /** Old permission level 2 and up: config and key access. */
+    // old permission level 2 and up: config + key access
     private static boolean isAdmin(CommandSourceStack source) {
         return source.permissions().hasPermission(
                 net.minecraft.server.permissions.Permissions.COMMANDS_ADMIN);
     }
 
-    /** Seconds since the grave was created, or -1 if unknown. */
+    // seconds since the grave was created, -1 if unknown
     private static long ageSeconds(CommandSourceStack source, Grave grave) {
         var level = source.getServer().getLevel(grave.dimension);
         if (level == null) return -1L;

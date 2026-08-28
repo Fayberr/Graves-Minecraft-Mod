@@ -38,27 +38,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 
-/**
- * Central registry of live graves plus the gameplay rules around them:
- * death capture, opening/restoring, robbing rules, despawning and persistence.
- *
- * Graves persist to {@code <world>/data/graves.json} so they survive restarts.
- */
+// Central registry of live graves plus the gameplay rules: death capture,
+// opening, robbing, despawn. Graves persist to <world>/data/graves.json.
 public final class GraveManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
 
-    /** All known graves, keyed by grave id. */
     private static final Map<UUID, Grave> GRAVES = new HashMap<>();
-    /** Entity UUID (any of the three spawned entities) to grave id. */
+    // entity uuid -> grave id, for any of the grave's entities
     private static final Map<UUID, UUID> ENTITY_INDEX = new HashMap<>();
 
     private static MinecraftServer server;
 
     private GraveManager() {}
-
-    // ------------------------------------------------------------------
-    // Lifecycle
-    // ------------------------------------------------------------------
 
     public static void onServerStarted(MinecraftServer srv) {
         server = srv;
@@ -72,15 +63,10 @@ public final class GraveManager {
         server = null;
     }
 
-    // ------------------------------------------------------------------
     // Death capture (ALLOW_DEATH event)
-    // ------------------------------------------------------------------
 
-    /**
-     * Called before a living entity dies. When a player without keepInventory
-     * dies we capture their inventory and XP into a grave; returning true lets
-     * death proceed normally afterwards.
-     */
+    // Called before a player dies. Captures inventory + XP into a grave,
+    // then lets death proceed normally. Returns true unless keepInventory.
     public static boolean onAllowDeath(net.minecraft.world.entity.LivingEntity entity, DamageSource source, float amount) {
         if (GraveConfig.get().compatibility_mode) return true;
         if (!(entity instanceof ServerPlayer player)) return true;
@@ -153,14 +139,10 @@ public final class GraveManager {
                 .get(net.minecraft.world.level.gamerules.GameRules.KEEP_INVENTORY));
     }
 
-    /**
-     * Total XP points the player currently has, derived from level + progress.
-     * The {@code totalExperience} field is NOT maintained by every XP source
-     * (e.g. {@code /xp ... levels} only bumps {@code experienceLevel}), so it
-     * reads 0 for players who gained levels through commands. This mirrors the
-     * vanilla {@code getXpNeededForNextLevel()} curve so the round-trip through
-     * {@code giveExperiencePoints} is lossless.
-     */
+    // Total XP points from level + progress. Can't use totalExperience: it's
+    // not maintained by every source (/xp levels only sets experienceLevel), so
+    // recompute the vanilla curve to keep the giveExperiencePoints round-trip
+    // lossless.
     private static int totalExperiencePoints(Player player) {
         int level = player.experienceLevel;
         int total = 0;
@@ -171,18 +153,16 @@ public final class GraveManager {
         return total;
     }
 
-    /** Vanilla XP curve for 26.1: 2*level+7, then 5*level-38, then 9*level-158. */
+    // Vanilla XP curve for 26.1: 2*level+7, then 5*level-38, then 9*level-158.
     private static int xpNeededForLevel(int level) {
         if (level >= 30) return 9 * level - 158;
         if (level >= 15) return 5 * level - 38;
         return 2 * level + 7;
     }
 
-    // ------------------------------------------------------------------
     // Interaction (use / attack on the grave hitbox)
-    // ------------------------------------------------------------------
 
-    /** Shared handler for UseEntityCallback and AttackEntityCallback. */
+    // shared by UseEntityCallback and AttackEntityCallback
     public static InteractionResult onInteract(Player player, Level level, InteractionHand hand, Entity target) {
         if (level.isClientSide()) return InteractionResult.PASS;
         if (!target.entityTags().contains(GraveSpawner.ENTITY_TAG_GRAVE)) return InteractionResult.PASS;
@@ -230,7 +210,7 @@ public final class GraveManager {
         message(player, "Grave picked up.");
     }
 
-    /** Preferred slot first, then any free slot, otherwise drop at the feet. */
+    // preferred slot first, then any free slot, otherwise drop at the feet
     private static void insertIntoPlayer(ServerPlayer player, int preferredSlot, ItemStack stack) {
         Inventory inv = player.getInventory();
         if (inv.getItem(preferredSlot).isEmpty()) {
@@ -246,7 +226,7 @@ public final class GraveManager {
         player.drop(stack, false);
     }
 
-    /** True while the player holds a Grave Key anywhere in their hands. */
+    // true while the player holds a Grave Key in either hand
     public static boolean hasGraveKey(ServerPlayer player) {
         for (InteractionHand hand : InteractionHand.values()) {
             ItemStack held = player.getItemInHand(hand);
@@ -259,22 +239,13 @@ public final class GraveManager {
         return false;
     }
 
-    // ------------------------------------------------------------------
-    // Shake animation
-    // ------------------------------------------------------------------
-
+    // shake animation
     private static void startShake(Grave grave) {
         grave.shakeTicks = 20;
     }
 
-    /**
-     * Wobbles every visual piece of the grave's look assembly to signal a
-     * denied robbing attempt. All pieces share the same base position (see
-     * {@link GraveDisplayBuilder}), so moving each by the same offset keeps
-     * the whole assembly shaking together instead of just one part of it.
-     * The interaction hitbox is left stationary; it never needed to move for
-     * this to read as a shake.
-     */
+    // Wobbles every visual piece on a denied robbing attempt. All pieces share
+    // one base position, so the same offset on each keeps the assembly rigid.
     private static void tickShake(Grave grave, ServerLevel level) {
         if (grave.shakeTicks <= 0) return;
         grave.shakeTicks--;
@@ -292,10 +263,7 @@ public final class GraveManager {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Tick (despawn timer + shake)
-    // ------------------------------------------------------------------
-
+    // despawn timer + shake
     public static void tick(MinecraftServer srv) {
         if (GraveConfig.get().compatibility_mode || GRAVES.isEmpty()) return;
         long despawnTicks = GraveConfig.get().despawn_seconds * 20L;
@@ -320,23 +288,19 @@ public final class GraveManager {
                         message((ServerPlayer) owner, "Your grave at " + grave.x + " "
                                 + grave.y + " " + grave.z + " decayed and spilled its contents.");
                     }
-                } else {
-                    GRAVES.remove(grave.id);
                 }
+                // if the dimension is gone we can't spill, but don't drop the
+                // grave from the registry either: its items would be lost
+                // silently while the entities live on in the chunk data
             }
             saveToDisk();
         }
     }
 
-    // ------------------------------------------------------------------
     // Destruction
-    // ------------------------------------------------------------------
 
-    /**
-     * Removes the grave. When {@code spill} is true the remaining contents are
-     * dropped as ground items and XP orbs (used by the despawn timer). When
-     * {@code notify} is set the owner gets a chat note.
-     */
+    // removes the grave; spill=true drops remaining contents as ground items
+    // and XP orbs (despawn timer), notify=true tells the owner in chat
     public static void destroyGrave(Grave grave, boolean spill, boolean notify) {
         ServerLevel level = server != null ? server.getLevel(grave.dimension) : null;
         if (level != null) {
@@ -389,11 +353,9 @@ public final class GraveManager {
         }
     }
 
-    // ------------------------------------------------------------------
-    // Registry helpers
-    // ------------------------------------------------------------------
+    // registry helpers
 
-    /** Every entity UUID belonging to this grave: hitbox, look pieces, and any legacy singles. */
+    // every entity uuid of this grave: hitbox, look pieces, legacy singles
     private static List<UUID> allEntityUuids(Grave grave) {
         List<UUID> all = new ArrayList<>();
         if (grave.interactionUuid != null) all.add(grave.interactionUuid);
@@ -428,7 +390,6 @@ public final class GraveManager {
         return gid != null ? GRAVES.get(gid) : null;
     }
 
-    /** All graves owned by the given player, nearest first relative to origin. */
     public static List<Grave> gravesOf(UUID ownerUuid) {
         List<Grave> out = new ArrayList<>();
         for (Grave grave : GRAVES.values()) {
@@ -441,7 +402,7 @@ public final class GraveManager {
         return new ArrayList<>(GRAVES.values());
     }
 
-    /** Nearest grave to the position within one dimension, or null. */
+    // nearest grave to the position within one dimension, or null
     public static Grave nearestGrave(ResourceKey<Level> dimension, BlockPos origin, UUID ownerFilter, boolean anyOwner) {
         Grave best = null;
         double bestDist = Double.MAX_VALUE;
@@ -460,10 +421,7 @@ public final class GraveManager {
         return best;
     }
 
-    // ------------------------------------------------------------------
-    // Persistence (JSON file with base64 NBT blobs)
-    // ------------------------------------------------------------------
-
+    // persistence (json file with base64 nbt blobs)
     private static Path storageFile(MinecraftServer srv) {
         return srv.getWorldPath(LevelResource.ROOT).resolve("data").resolve("graves.json");
     }
@@ -513,10 +471,7 @@ public final class GraveManager {
         }
     }
 
-    // ------------------------------------------------------------------
-    // World facade for the placement state machine
-    // ------------------------------------------------------------------
-
+    // world facade for the placement state machine
     private static GraveSpawner.WorldFacade facade(ServerLevel level) {
         return new GraveSpawner.WorldFacade() {
             @Override
