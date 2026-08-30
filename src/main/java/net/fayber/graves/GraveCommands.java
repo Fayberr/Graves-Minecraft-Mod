@@ -152,8 +152,10 @@ public final class GraveCommands {
         return 0;
     }
 
-    // old permission level 2 and up: config + key access
     private static boolean isAdmin(CommandSourceStack source) {
+        if (source.getServer().isSingleplayer()) {
+            return true;
+        }
         return source.permissions().hasPermission(
                 net.minecraft.server.permissions.Permissions.COMMANDS_ADMIN);
     }
