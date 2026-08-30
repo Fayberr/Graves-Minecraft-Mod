@@ -153,7 +153,7 @@ public final class GraveCommands {
     }
 
     private static boolean isAdmin(CommandSourceStack source) {
-        if (source.getServer().isSingleplayer()) {
+        if (source.getServer() != null && source.getServer().isSingleplayer()) {
             return true;
         }
         return source.permissions().hasPermission(
