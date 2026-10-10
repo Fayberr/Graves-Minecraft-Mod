@@ -223,7 +223,7 @@ public final class GraveManager {
                 return;
             }
         }
-        player.drop(stack, false);
+        player.drop(stack, false, net.minecraft.util.Prediction.SERVER_ONLY);
     }
 
     // true while the player holds a Grave Key in either hand

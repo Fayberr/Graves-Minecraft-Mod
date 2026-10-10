@@ -119,7 +119,7 @@ public final class GraveCommands {
             return 0;
         }
         if (!player.getInventory().add(GraveKeyItem.create())) {
-            player.drop(GraveKeyItem.create(), false);
+            player.drop(GraveKeyItem.create(), false, net.minecraft.util.Prediction.SERVER_ONLY);
         }
         source.sendSuccess(() -> Component.literal("[Graves] Handed you a Grave Key."
                 + " It opens any grave."), true);
