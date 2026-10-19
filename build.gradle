@@ -17,6 +17,15 @@ repositories {
 	maven { name = 'Shedaniel'; url = 'https://maven.shedaniel.me/' }
 }
 
+fabricApi {
+	configureTests {
+		createSourceSet = true
+		modId = "graves-test"
+		enableGameTests = true
+		eula = true
+	}
+}
+
 dependencies {
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
 	implementation "net.fabricmc:fabric-loader:${project.loader_version}"

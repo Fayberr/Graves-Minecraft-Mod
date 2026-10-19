@@ -63,6 +63,17 @@ public final class GraveManager {
         server = null;
     }
 
+    // Mirrors LivingEntity.checkTotemDeathProtection: damage that bypasses
+    // invulnerability (void, /kill) is never saved, otherwise any item with the
+    // death_protection component in either hand is consumed and the player lives.
+    private static boolean wouldDeathProtectionTrigger(ServerPlayer player, DamageSource source) {
+        if (source.is(net.minecraft.tags.DamageTypeTags.BYPASSES_INVULNERABILITY)) return false;
+        for (InteractionHand hand : InteractionHand.values()) {
+            if (player.getItemInHand(hand).get(DataComponents.DEATH_PROTECTION) != null) return true;
+        }
+        return false;
+    }
+
     // Death capture (ALLOW_DEATH event)
 
     // Called before a player dies. Captures inventory + XP into a grave,
@@ -71,6 +82,11 @@ public final class GraveManager {
         if (GraveConfig.get().compatibility_mode) return true;
         if (!(entity instanceof ServerPlayer player)) return true;
         if (!(player.level() instanceof ServerLevel level)) return true;
+
+        // ALLOW_DEATH fires before vanilla's totem check. If a totem is about
+        // to save the player, leave the inventory alone so the totem is still
+        // in hand when vanilla looks for it.
+        if (wouldDeathProtectionTrigger(player, source)) return true;
 
         if (keepInventory(level)) {
             return true; // Items stay with the player, nothing to do.

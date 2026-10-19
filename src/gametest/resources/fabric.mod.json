@@ -1,0 +1,10 @@
+{
+  "schemaVersion": 1,
+  "id": "graves-test",
+  "version": "1.0.0",
+  "name": "Graves tests",
+  "environment": "*",
+  "entrypoints": {
+    "fabric-gametest": ["net.fayber.graves.gametest.TotemGameTest"]
+  }
+}
